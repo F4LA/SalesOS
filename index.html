@@ -21,23 +21,15 @@
 }
 body { background: var(--bg); color: var(--text-body); font-family: var(--sans); font-size: 15px; min-height: 100vh; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
-/* LOADING */
-#loading-screen {
-  position: fixed; inset: 0; background: var(--navy-900);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 1000;
-}
+/* LOADING / ERROR */
+#loading-screen { position: fixed; inset: 0; background: var(--navy-900); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 1000; }
 #loading-screen.hidden { display: none; }
+#error-screen { position: fixed; inset: 0; background: var(--navy-900); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 1000; padding: 2rem; }
+#error-screen.hidden { display: none; }
 .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--steel-400); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 13px; color: rgba(255,255,255,0.5); font-family: var(--mono); }
 .loading-brand { font-size: 15px; font-weight: 700; color: white; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
-
-/* ERROR */
-#error-screen {
-  position: fixed; inset: 0; background: var(--navy-900);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 1000; padding: 2rem;
-}
-#error-screen.hidden { display: none; }
 .error-title { font-size: 16px; font-weight: 600; color: var(--red-bg); }
 .error-msg { font-size: 13px; color: rgba(255,255,255,0.5); font-family: var(--mono); text-align: center; max-width: 500px; }
 .retry-btn { background: var(--steel-600); color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-family: var(--sans); cursor: pointer; font-weight: 600; margin-top: 8px; }
@@ -62,6 +54,14 @@ header { background: var(--navy-900); padding: 0 2.5rem; height: 64px; display: 
 .refresh-btn:hover { color: white; background: rgba(255,255,255,0.12); }
 .header-meta { font-size: 11px; color: rgba(255,255,255,0.3); font-family: var(--mono); }
 
+/* TABS */
+.tab-bar { background: var(--navy-900); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; padding: 0 2.5rem; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 20px; font-family: var(--sans); font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; margin-bottom: -1px; white-space: nowrap; }
+.tab-btn:hover { color: rgba(255,255,255,0.75); }
+.tab-btn.active { color: white; border-bottom-color: var(--steel-400); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
 /* MAIN */
 main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: flex; flex-direction: column; gap: 2.5rem; }
 .section-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.25rem; }
@@ -70,12 +70,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 
 /* SCORECARD */
 .scorecard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.metric-card {
-  background: var(--surface); border: 1.5px solid var(--border); border-left: 5px solid var(--border);
-  border-radius: var(--radius); padding: 1.75rem 1.75rem 1.5rem;
-  position: relative; cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s; user-select: none;
-}
+.metric-card { background: var(--surface); border: 1.5px solid var(--border); border-left: 5px solid var(--border); border-radius: var(--radius); padding: 1.75rem 1.75rem 1.5rem; position: relative; cursor: pointer; transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s; user-select: none; }
 .metric-card.green { border-left-color: var(--green); border-color: var(--green-border); }
 .metric-card.red   { border-left-color: var(--red);   border-color: var(--red-border); }
 .metric-card.gold  { border-left-color: var(--gold);  border-color: var(--gold-border); }
@@ -90,8 +85,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
 .badge-red   { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
 .badge-gold  { background: var(--gold-bg);  color: var(--gold);  border: 1px solid var(--gold-border); }
-.badge-up    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); font-weight: 500; }
-.badge-down  { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border);   font-weight: 500; }
 .badge-alert { background: #FDE8E8; color: #A02020; border: 1px solid #F0B0B0; font-weight: 700; }
 .metric-value { font-family: var(--mono); font-size: 52px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; margin-bottom: 10px; }
 .metric-card.green .metric-value { color: var(--green); }
@@ -116,18 +109,21 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .lead-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 7px; background: var(--surface-2); }
 .lead-name { font-size: 13px; color: var(--text-body); font-weight: 500; }
 .lead-source { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.src-emery   { background: #E3F2FC; color: var(--steel-700); border: 1px solid #B8D9EF; }
-.src-inbound { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); }
-.src-deniz   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.src-joey    { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-strong); }
+.src-emery   { background: #E3F2FC; color: #1A5F8A; border: 1px solid #90C4E0; }       /* Blue */
+.src-inbound { background: #FEF3E2; color: #B45309; border: 1px solid #F4C17A; }       /* Amber */
+.src-deniz   { background: #E8F8F0; color: #1A9E5C; border: 1px solid #A3DFC0; }       /* Green */
+.src-joey    { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }       /* Indigo */
+.src-cancelled { background: #FDEAEA; color: #C93A3A; border: 1px solid #F0AAAA; }     /* Red */
 .panel-summary { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .sum-stat { display: flex; flex-direction: column; gap: 1px; }
 .sum-num { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--text-primary); line-height: 1; }
 .sum-lbl { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
 .chart-panel-wrap { height: 140px; }
+.panel-definition { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.panel-definition strong { color: var(--text-body); font-weight: 600; }
+.def-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--steel-400); margin-bottom: 6px; display: block; }
 
-/* ROLE DASHBOARDS */
-.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* ROLE CARD */
 .role-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .role-card-header { background: var(--surface-2); padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
 .role-title { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--navy-600); }
@@ -140,23 +136,62 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .role-table td:first-child { text-align: left; }
 .metric-cell-label { font-size: 13px; font-weight: 600; color: var(--text-body); display: block; }
 .metric-cell-threshold { font-size: 11px; color: var(--text-faint); font-family: var(--mono); display: block; margin-top: 2px; }
-.role-dot-wrap { display: flex; justify-content: center; align-items: center; }
+.role-dot-wrap { display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 4px; }
 .role-dot { width: 44px; height: 44px; border-radius: 10px; position: relative; cursor: default; transition: transform 0.15s; display: flex; align-items: center; justify-content: center; }
 .role-dot:hover { transform: scale(1.1); }
 .role-dot.green { background: var(--green-bg); border: 1.5px solid var(--green-border); }
 .role-dot.red   { background: var(--red-bg);   border: 1.5px solid var(--red-border); }
 .role-dot.gold  { background: var(--gold-bg);  border: 1.5px solid var(--gold-border); }
 .role-dot.ctx   { background: var(--surface-2); border: 1.5px dashed var(--border-strong); opacity: 0.6; }
+.role-dot.neutral { background: var(--surface-2); border: 1.5px solid var(--border-strong); }
 .role-dot-inner { width: 14px; height: 14px; border-radius: 50%; }
 .role-dot.green .role-dot-inner { background: var(--green); }
 .role-dot.red   .role-dot-inner { background: var(--red); }
 .role-dot.gold  .role-dot-inner { background: var(--gold); }
 .role-dot.ctx   .role-dot-inner { background: var(--text-faint); opacity: 0.4; }
+.role-dot.neutral .role-dot-inner { background: var(--text-faint); }
 .role-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--navy-900); border-radius: 7px; padding: 5px 12px; white-space: nowrap; font-size: 12px; font-family: var(--mono); font-weight: 500; color: #fff; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
 .role-dot:hover .role-tooltip { opacity: 1; }
 .ctx-note { font-size: 10px; color: var(--text-faint); font-style: italic; display: block; margin-top: 4px; text-align: center; }
 
-/* HISTORY */
+/* INDIVIDUAL DASHBOARD */
+.dash-controls { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 2.5rem; display: flex; align-items: center; gap: 16px; position: sticky; top: 64px; z-index: 90; }
+.dash-mode-group { display: flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.dash-mode-btn { background: none; border: none; padding: 6px 14px; font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
+.dash-mode-btn.active { background: var(--navy-900); color: white; }
+.person-select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--text-body); cursor: pointer; outline: none; }
+.person-select:focus { border-color: var(--steel-400); }
+.date-mode-group { display: flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.date-mode-btn { background: none; border: none; padding: 6px 12px; font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.date-mode-btn.active { background: var(--navy-900); color: white; }
+.date-input { background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; font-family: var(--mono); font-size: 12px; color: var(--text-body); outline: none; cursor: pointer; }
+.date-input:focus { border-color: var(--steel-400); }
+.date-label { font-size: 11px; color: var(--text-faint); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.date-display { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+.dash-view-content { display: none; }
+.dash-view-content.active { display: block; }
+
+/* INDIVIDUAL METRICS TABLE */
+.indiv-metrics-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+.indiv-table { width: 100%; border-collapse: collapse; }
+.indiv-table thead tr { background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.indiv-table th { padding: 12px 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); text-align: left; }
+.indiv-table th:last-child { text-align: right; }
+.indiv-table td { padding: 14px 20px; border-top: 1px solid var(--border); vertical-align: middle; }
+.indiv-table td:last-child { text-align: right; }
+.indiv-label { font-size: 13px; font-weight: 600; color: var(--text-body); display: block; }
+.indiv-sub { font-size: 11px; color: var(--text-faint); font-family: var(--mono); display: block; margin-top: 2px; }
+.indiv-value-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.indiv-value { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--text-primary); }
+.indiv-value.green { color: var(--green); }
+.indiv-value.red   { color: var(--red); }
+.indiv-value.gold  { color: var(--gold); }
+.indiv-value.neutral { color: var(--text-muted); }
+.toggle-btn { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: 11px; font-family: var(--mono); color: var(--text-muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.toggle-btn:hover { border-color: var(--steel-400); color: var(--steel-600); }
+.indiv-dot-col { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+
+/* HISTORY TABLE */
 .history-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .history-table { width: 100%; border-collapse: collapse; }
 .history-table thead tr { background: var(--navy-900); }
@@ -175,15 +210,42 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .hist-pill.red   { background: var(--red-bg);   color: var(--red); }
 .hist-pill.gold  { background: var(--gold-bg);  color: var(--gold); }
 
-.panel-definition {
-  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
-  font-size: 12px; color: var(--text-muted); line-height: 1.6;
-}
-.panel-definition strong { color: var(--text-body); font-weight: 600; }
-.panel-definition .def-title {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--steel-400); margin-bottom: 6px; display: block;
-}
+/* BREAKDOWN TABLE */
+.breakdown-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.breakdown-table { width: 100%; border-collapse: collapse; }
+.breakdown-table thead tr { background: var(--navy-900); }
+.breakdown-table th { padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); text-align: left; }
+.breakdown-table tbody tr { border-top: 1px solid var(--border); }
+.breakdown-table tbody tr:hover { background: var(--surface-2); }
+.breakdown-table td { padding: 10px 16px; font-size: 12px; color: var(--text-body); font-family: var(--mono); }
+.breakdown-table td:first-child { font-family: var(--sans); font-weight: 500; }
+.status-pill { display: inline-flex; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: var(--sans); }
+.status-showed { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.status-followup { background: #FDF4E0; color: #A07820; border: 1px solid #E8CC80; }
+.status-cancelled { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.status-noshow { background: #FDE8E8; color: #A02020; border: 1px solid #F0B0B0; }
+.status-dq { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-strong); }
+.status-closed { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); }
+
+/* DATE PICKER */
+.dpicker-wrap { position: relative; display: flex; align-items: center; gap: 0; }
+.dpicker-input { background: var(--surface); border: 1.5px solid var(--border); border-right: none; border-radius: 8px 0 0 8px; padding: 6px 10px; font-family: var(--mono); font-size: 12px; color: var(--text-body); outline: none; width: 96px; }
+.dpicker-input:focus { border-color: var(--steel-400); }
+.dpicker-btn { background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 0 8px 8px 0; padding: 5px 9px; cursor: pointer; font-size: 13px; line-height: 1; transition: background 0.15s; color: var(--text-muted); }
+.dpicker-btn:hover { background: var(--border); }
+.cpk-popup { position: absolute; top: calc(100% + 6px); left: 0; z-index: 600; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: 12px; padding: 12px; min-width: 220px; box-shadow: 0 8px 32px rgba(8,13,26,0.14); }
+.cpk-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cpk-month-label { font-size: 12px; font-weight: 700; color: var(--text-body); font-family: var(--mono); }
+.cpk-nav { background: none; border: 1.5px solid var(--border); border-radius: 6px; width: 26px; height: 26px; cursor: pointer; color: var(--text-muted); font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+.cpk-nav:hover { border-color: var(--steel-400); color: var(--steel-600); }
+.cpk-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cpk-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text-faint); padding: 2px 0 6px; letter-spacing: 0.04em; }
+.cpk-day { text-align: center; padding: 5px 2px; font-size: 11px; font-family: var(--mono); color: var(--text-body); cursor: pointer; border-radius: 5px; transition: background 0.1s; }
+.cpk-day:hover { background: var(--surface-2); }
+.cpk-day.cpk-sel { background: var(--navy-900); color: white; font-weight: 600; }
+.cpk-day.cpk-today { color: var(--steel-600); font-weight: 700; }
+.date-display { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+
 #overlay { position: fixed; inset: 0; z-index: 490; display: none; }
 #overlay.active { display: block; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -194,22 +256,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 </head>
 <body>
 
-<!-- LOADING -->
 <div id="loading-screen">
   <div class="loading-brand">Strong Standard</div>
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Loading sales data...</div>
 </div>
-
-<!-- ERROR -->
 <div id="error-screen" class="hidden">
   <div class="loading-brand">Strong Standard</div>
   <div class="error-title">Could not load data</div>
   <div class="error-msg" id="error-msg"></div>
   <button class="retry-btn" onclick="init()">↻ Retry</button>
 </div>
-
-<!-- OVERLAY -->
 <div id="overlay" onclick="closeAllPanels()"></div>
 
 <!-- PANELS -->
@@ -227,10 +284,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 </div>
 <div class="floating-panel" id="panel-setting">
   <div class="panel-header"><span class="panel-title">Setting Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body">
-    <div class="panel-summary" id="summary-setting" style="margin-top:0;padding-top:0;border-top:none;"></div>
-    <div id="def-setting" class="panel-definition"></div>
-  </div>
+  <div class="panel-body"><div class="panel-summary" id="summary-setting" style="margin-top:0;padding-top:0;border-top:none;"></div><div id="def-setting" class="panel-definition"></div></div>
 </div>
 <div class="floating-panel" id="panel-chart" style="min-width:320px;">
   <div class="panel-header"><span class="panel-title" id="panel-chart-title">Trend · Last 8 Weeks</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
@@ -245,710 +299,1201 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
     <div class="brand-pipe"></div>
     <span class="brand-sub">Sales Pulse</span>
   </div>
-  <div class="week-nav">
-    <button onclick="changeWeek(-1)" id="btn-prev">‹</button>
-    <div class="week-nav-center">
-      <span class="nav-week-id" id="nav-week-label"></span>
-      <span class="nav-date-range" id="nav-date-range"></span>
-    </div>
-    <button onclick="changeWeek(1)" id="btn-next">›</button>
-  </div>
+
   <div class="header-right">
     <span class="header-meta" id="last-updated"></span>
     <button class="refresh-btn" onclick="init()">↻ Refresh</button>
   </div>
 </header>
 
-<!-- MAIN -->
-<main>
-  <section>
-    <div class="section-header">
-      <span class="section-label">Department Scorecard</span>
-      <span class="section-meta" id="scorecard-summary"></span>
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('scorecard',this)">Scorecard</button>
+  <button class="tab-btn" onclick="switchTab('closer',this)">Closer Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('setter',this)">Setter Dashboard</button>
+</div>
+
+<!-- TAB: SCORECARD -->
+<div id="tab-scorecard" class="tab-content active">
+  <div class="dash-controls" id="scorecard-controls">
+    <div class="date-mode-group">
+      <button class="date-mode-btn active" onclick="setScorecardMode('week',this)">Week</button>
+      <button class="date-mode-btn" onclick="setScorecardMode('month',this)">Month</button>
+      <button class="date-mode-btn" onclick="setScorecardMode('day',this)">Day</button>
     </div>
-    <div class="scorecard-grid" id="scorecard-grid"></div>
-  </section>
-  <section>
-    <div class="section-header">
-      <span class="section-label">Role Dashboards</span>
-      <span class="section-meta">Hover dot for value</span>
+    <div id="sc-week-inputs" style="display:flex;align-items:center;gap:8px;">
+      <div class="dpicker-wrap" id="dpicker-sc-week">
+        <input class="dpicker-input" id="dinput-sc-week" type="text" placeholder="M/D/YYYY" oninput="onDateInput('sc-week',this.value)">
+        <button class="dpicker-btn" onclick="openPicker('sc-week')">📅</button>
+        <div class="cpk-popup" id="pop-sc-week" style="display:none;"></div>
+      </div>
+      <span class="date-label" style="color:var(--text-faint);">→ 7 days</span>
+      <span class="date-display" id="sc-week-end-display">—</span>
     </div>
-    <div class="role-grid">
-      <div class="role-card">
-        <div class="role-card-header"><span class="role-title">Setter</span><span class="role-hint">weekly · MTD</span></div>
-        <table class="role-table">
-          <thead><tr><th>Metric</th><th>Emery</th></tr></thead>
-          <tbody id="setter-body"></tbody>
+    <div id="sc-month-inputs" style="display:none;align-items:center;gap:8px;">
+      <input type="month" class="date-input" id="sc-month" onchange="onScorecardMonthChange()">
+    </div>
+    <div id="sc-day-inputs" style="display:none;align-items:center;gap:8px;">
+      <div class="dpicker-wrap" id="dpicker-sc-day">
+        <input class="dpicker-input" id="dinput-sc-day" type="text" placeholder="M/D/YYYY" oninput="onDateInput('sc-day',this.value)">
+        <button class="dpicker-btn" onclick="openPicker('sc-day')">📅</button>
+        <div class="cpk-popup" id="pop-sc-day" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="nav-arrows" style="display:flex;gap:4px;margin-left:4px;">
+      <button class="cpk-nav" onclick="navigateScorecard(-1)">‹</button>
+      <button class="cpk-nav" onclick="navigateScorecard(1)">›</button>
+    </div>
+    <span style="font-size:11px;color:var(--text-faint);font-family:var(--mono);" id="sc-period-label"></span>
+  </div>
+  <main>
+    <section>
+      <div class="section-header">
+        <span class="section-label">Department Scorecard</span>
+        <span class="section-meta" id="scorecard-summary"></span>
+      </div>
+      <div class="scorecard-grid" id="scorecard-grid"></div>
+    </section>
+    <section>
+      <div class="section-header">
+        <span class="section-label">Historical</span>
+        <span class="section-meta">Last 8 weeks · click row to navigate</span>
+      </div>
+      <div class="history-wrap">
+        <table class="history-table">
+          <thead><tr><th>Week</th><th>Dates</th><th>Calls Booked</th><th>Qual. Shows</th><th>New Contracts</th><th>Close Rate</th><th>Gross Show Rate</th><th>Setting Rate</th></tr></thead>
+          <tbody id="history-body"></tbody>
         </table>
       </div>
+    </section>
+  </main>
+</div>
+
+<!-- TAB: CLOSER DASHBOARD -->
+<div id="tab-closer" class="tab-content">
+  <div class="dash-controls">
+    <div class="dash-mode-group">
+      <button class="dash-mode-btn active" id="closer-mode-indiv" onclick="setDashMode('closer','individual',this)">Individual</button>
+      <button class="dash-mode-btn" id="closer-mode-comp" onclick="setDashMode('closer','comparison',this)">Comparison</button>
+    </div>
+    <div id="closer-indiv-controls" style="display:flex;align-items:center;gap:16px;">
+      <select class="person-select" id="closer-person" onchange="renderCloserIndiv()">
+        <option value="Deniz">Deniz</option>
+        <option value="Dr. Joey">Joey</option>
+      </select>
+      <div class="date-mode-group">
+        <button class="date-mode-btn active" onclick="setCloserDateMode('week',this)">Week</button>
+        <button class="date-mode-btn" onclick="setCloserDateMode('month',this)">Month</button>
+        <button class="date-mode-btn" onclick="setCloserDateMode('day',this)">Day</button>
+      </div>
+      <div id="closer-week-inputs" style="display:flex;align-items:center;gap:8px;">
+        <div class="dpicker-wrap" id="dpicker-closer-week">
+          <input class="dpicker-input" id="dinput-closer-week" type="text" placeholder="M/D/YYYY" oninput="onDateInput('closer-week',this.value)">
+          <button class="dpicker-btn" onclick="openPicker('closer-week')">📅</button>
+          <div class="cpk-popup" id="pop-closer-week" style="display:none;"></div>
+        </div>
+        <span class="date-label" style="color:var(--text-faint);">→ 7 days</span>
+        <span class="date-display" id="closer-week-end-display">—</span>
+      </div>
+      <div id="closer-month-inputs" style="display:none;align-items:center;gap:8px;">
+        <input type="month" class="date-input" id="closer-month" onchange="renderCloserIndiv()">
+      </div>
+      <div id="closer-day-inputs" style="display:none;align-items:center;gap:8px;">
+        <div class="dpicker-wrap" id="dpicker-closer-day">
+          <input class="dpicker-input" id="dinput-closer-day" type="text" placeholder="M/D/YYYY" oninput="onDateInput('closer-day',this.value)">
+          <button class="dpicker-btn" onclick="openPicker('closer-day')">📅</button>
+          <div class="cpk-popup" id="pop-closer-day" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <main>
+    <!-- Individual view -->
+    <div id="closer-view-individual" class="dash-view-content active">
+      <div class="section-header">
+        <span class="section-label" id="closer-indiv-title">Closer — Individual</span>
+        <span class="section-meta" id="closer-indiv-period"></span>
+      </div>
+      <div id="closer-indiv-body"></div>
+      <div class="section-header" style="margin-top:1.5rem;"><span class="section-label">Performance Breakdown</span></div>
+      <div class="breakdown-wrap">
+        <table class="breakdown-table">
+          <thead><tr><th>Name</th><th>Call Date</th><th>Status</th><th>Sale</th><th>Product</th></tr></thead>
+          <tbody id="closer-breakdown"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Comparison view -->
+    <div id="closer-view-comparison" class="dash-view-content">
+      <div class="section-header">
+        <span class="section-label">Closer — Comparison</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="section-meta" id="closer-comp-period"></span>
+        </div>
+      </div>
       <div class="role-card">
-        <div class="role-card-header"><span class="role-title">Closer</span><span class="role-hint">weekly</span></div>
+        <div class="role-card-header"><span class="role-title">Closer</span><span class="role-hint" id="closer-comp-hint">weekly</span></div>
         <table class="role-table">
           <thead><tr><th>Metric</th><th>Deniz</th><th>Joey</th></tr></thead>
-          <tbody id="closer-body"></tbody>
+          <tbody id="closer-comp-body"></tbody>
         </table>
       </div>
     </div>
-  </section>
-  <section>
-    <div class="section-header">
-      <span class="section-label">Historical</span>
-      <span class="section-meta">Last 8 weeks · click row to navigate</span>
+  </main>
+</div>
+
+<!-- TAB: SETTER DASHBOARD -->
+<div id="tab-setter" class="tab-content">
+  <div class="dash-controls">
+    <div class="dash-mode-group">
+      <button class="dash-mode-btn active" id="setter-mode-indiv" onclick="setDashMode('setter','individual',this)">Individual</button>
+      <button class="dash-mode-btn" id="setter-mode-comp" onclick="setDashMode('setter','comparison',this)">Comparison</button>
     </div>
-    <div class="history-wrap">
-      <table class="history-table">
-        <thead>
-          <tr>
-            <th>Week</th><th>Dates</th>
-            <th>Calls Booked</th><th>Qual. Shows</th><th>New Contracts</th>
-            <th>Close Rate</th><th>Show Rate</th><th>Setting Rate</th>
-          </tr>
-        </thead>
-        <tbody id="history-body"></tbody>
-      </table>
+    <div id="setter-indiv-controls" style="display:flex;align-items:center;gap:16px;">
+      <select class="person-select" id="setter-person" onchange="renderSetterIndiv()">
+        <option value="Emery">Emery</option>
+        <option value="Deniz">Deniz</option>
+      </select>
+      <div class="date-mode-group">
+        <button class="date-mode-btn active" onclick="setSetterDateMode('week',this)">Week</button>
+        <button class="date-mode-btn" onclick="setSetterDateMode('month',this)">Month</button>
+        <button class="date-mode-btn" onclick="setSetterDateMode('day',this)">Day</button>
+      </div>
+      <div id="setter-week-inputs" style="display:flex;align-items:center;gap:8px;">
+        <div class="dpicker-wrap" id="dpicker-setter-week">
+          <input class="dpicker-input" id="dinput-setter-week" type="text" placeholder="M/D/YYYY" oninput="onDateInput('setter-week',this.value)">
+          <button class="dpicker-btn" onclick="openPicker('setter-week')">📅</button>
+          <div class="cpk-popup" id="pop-setter-week" style="display:none;"></div>
+        </div>
+        <span class="date-label" style="color:var(--text-faint);">→ 7 days</span>
+        <span class="date-display" id="setter-week-end-display">—</span>
+      </div>
+      <div id="setter-month-inputs" style="display:none;align-items:center;gap:8px;">
+        <input type="month" class="date-input" id="setter-month" onchange="renderSetterIndiv()">
+      </div>
+      <div id="setter-day-inputs" style="display:none;align-items:center;gap:8px;">
+        <div class="dpicker-wrap" id="dpicker-setter-day">
+          <input class="dpicker-input" id="dinput-setter-day" type="text" placeholder="M/D/YYYY" oninput="onDateInput('setter-day',this.value)">
+          <button class="dpicker-btn" onclick="openPicker('setter-day')">📅</button>
+          <div class="cpk-popup" id="pop-setter-day" style="display:none;"></div>
+        </div>
+      </div>
     </div>
-  </section>
-</main>
+  </div>
+  <main>
+    <!-- Individual view -->
+    <div id="setter-view-individual" class="dash-view-content active">
+      <div class="section-header">
+        <span class="section-label" id="setter-indiv-title">Setter — Individual</span>
+        <span class="section-meta" id="setter-indiv-period"></span>
+      </div>
+      <div id="setter-indiv-body"></div>
+      <div class="section-header" style="margin-top:1.5rem;"><span class="section-label">Performance Breakdown</span></div>
+      <div class="breakdown-wrap">
+        <table class="breakdown-table">
+          <thead><tr><th>Name</th><th>Set Date</th><th>Call Date</th><th>Status</th><th>Qualified</th></tr></thead>
+          <tbody id="setter-breakdown"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Comparison view -->
+    <div id="setter-view-comparison" class="dash-view-content">
+      <div class="section-header"><span class="section-label">Setter — Comparison</span><span class="section-meta" id="setter-comp-period"></span></div>
+      <div class="role-card">
+        <div class="role-card-header"><span class="role-title">Setter</span><span class="role-hint" id="setter-comp-hint">weekly · MTD</span></div>
+        <table class="role-table">
+          <thead><tr><th>Metric</th><th>Emery</th><th>Deniz</th></tr></thead>
+          <tbody id="setter-comp-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const SHEET_ID  = '1ctM6K8hQfh73bi7f-MtXkqW3BaPxU73NZf8xPJQUEOc';
-const API_KEY   = 'AIzaSyC7WtRVmLS2mo53i_Cge8NAlJ5tB2kaHjE';
-const TAB_LEADS = 'Leads applied';
-const TAB_DMS   = 'DM TRACKING INDEX';
+const SHEET_ID   = '1ctM6K8hQfh73bi7f-MtXkqW3BaPxU73NZf8xPJQUEOc';
+const API_KEY    = 'AIzaSyC7WtRVmLS2mo53i_Cge8NAlJ5tB2kaHjE';
+const TAB_LEADS  = 'Leads applied';
+const TAB_DMS    = 'DM TRACKING INDEX';
+const TAB_CLIENT = 'Client Mastersheet';
 
-// Leads Applied column indices (0-based)
-const L = {
-  firstName: 0, lastName: 1, email: 2,
-  bookedQualified: 9,       // col J — Yes/No (qualified lead)
-  salesCallBookedDate: 10,  // col K — when call HAPPENED
-  callStatus: 11,           // col L — Showed / Follow Up / Cancelled / No Show / Confirmed / DQ
-  salesCallWith: 12,        // col M — Dr. Joey / Deniz / Bernardo
-  endInSale: 13,            // col N — Yes/No
-  endInSaleDate: 14,        // col O
-  source: 16,               // col Q — Emery / Deniz / Freebie / etc
-  callScheduledDate: 17,    // col R — when call was SET (booked into calendar)
-  productPurchased: 15,     // col P — 1:1 Coaching / Membership
-};
+const L = { firstName:0,lastName:1,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
+const D = { newLeadTS:4, setter:7 };
+const C = { datePurchased:5, salesPerson:12, cashCollected:25 };
 
-// DM Tracking Index column indices (0-based)
-const D = {
-  firstName: 0, lastName: 1, igHandle: 2,
-  newLeadTS: 4,   // col E
-  engagedTS: 5,   // col F
-  setter: 7,      // col H
-};
-
-// Setter sources (all others = inbound)
-const SETTER_SOURCES = new Set(['Emery', 'Deniz']);
-
-// Call statuses that count as "completed" (not future/pending)
-const COMPLETED_STATUSES = new Set(['Showed', 'Cancelled', 'No Show', 'Disqualified on sales call', 'Follow Up']);
+const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales call','Follow Up']);
+const SHOWED    = new Set(['Showed','Follow Up','Disqualified on sales call']);
+const QUAL      = new Set(['Showed','Follow Up']);
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
-let WEEKS = [];
-let currentIdx = 0;
-let trendChart = null;
-let leadsRaw = [];
-let dmsRaw = [];
+let WEEKS = [], currentIdx = 0, trendChart = null;
+let scDateMode = 'week'; // scorecard date mode: 'week' | 'month' | 'day'
+let leadsRaw = [], dmsRaw = [], clientRaw = [];
+let closerDateMode = 'week', setterDateMode = 'week';
+// Toggle state: 'pct' or 'num'
+let closerToggle = {cancelled:'num', netShow:'pct', closeRate:'pct'};
+let setterToggle = {settingRate:'pct', cancelled:'num', netShow:'pct'};
 
-// ─── DATE UTILS ───────────────────────────────────────────────────────────────
+// ─── UTILS ────────────────────────────────────────────────────────────────────
 function parseDate(s) {
-  if (!s) return null;
-  s = s.trim();
-  if (!s) return null;
-  // Try various formats
+  if (!s) return null; s = String(s).trim(); if (!s) return null;
   let m;
-  // "April 16, 2026" or "April 16, 2026"
   m = s.match(/^(\w+)\s+(\d+),\s+(\d{4})$/);
-  if (m) {
-    const months = {January:0,February:1,March:2,April:3,May:4,June:5,July:6,August:7,September:8,October:9,November:10,December:11};
-    const mo = months[m[1]];
-    if (mo !== undefined) return new Date(+m[3], mo, +m[2]);
-  }
-  // "4/15/2026" or "4/15/26"
+  if (m) { const mo={January:0,February:1,March:2,April:3,May:4,June:5,July:6,August:7,September:8,October:9,November:10,December:11}[m[1]]; if(mo!==undefined)return new Date(+m[3],mo,+m[2]); }
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (m) {
-    let yr = +m[3];
-    if (yr < 100) yr += 2000;
-    return new Date(yr, +m[1]-1, +m[2]);
-  }
-  // "2026-04-21" or "2026-04-21 16:47:30"
+  if (m) { let yr=+m[3]; if(yr<100)yr+=2000; return new Date(yr,+m[1]-1,+m[2]); }
   m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  if (m) return new Date(+m[1],+m[2]-1,+m[3]);
   return null;
 }
-
-function weekStartDate(d) {
-  // Week starts on Friday
-  const day = d.getDay(); // 0=Sun, 5=Fri
-  const diff = (day - 5 + 7) % 7;
-  const ws = new Date(d);
-  ws.setDate(d.getDate() - diff);
-  ws.setHours(0,0,0,0);
-  return ws;
-}
-
-function dateKey(d) {
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function formatDateShort(d) {
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return months[d.getMonth()] + ' ' + d.getDate();
-}
-
-function sameDay(a, b) {
-  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
-}
-
-function inWeek(d, ws) {
-  const we = new Date(ws); we.setDate(ws.getDate() + 6);
-  return d >= ws && d <= we;
-}
-
-// ─── FETCH ────────────────────────────────────────────────────────────────────
-async function fetchSheet(tabName) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tabName)}?key=${API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  const rows = data.values || [];
-  if (rows.length < 2) return [];
-  return rows.slice(1); // skip header
-}
-
-// ─── PROCESS DATA ─────────────────────────────────────────────────────────────
-// Col R (callScheduledDate, idx 17) = when call was SET → used for Calls Booked + Booking Rate
-// Col K (salesCallBookedDate, idx 10) = when call HAPPENED → used for Shows, Show Rate, Close Rate, Contracts
-// Show statuses = "Showed" + "Follow Up" (both count as a show)
-// Net Show Rate = showed ÷ (completed - cancelled) — excludes cancellations from denominator
-const SHOW_STATUSES = new Set(['Showed', 'Follow Up', 'Disqualified on sales call']);
-
-function processData(leads, dms) {
-  // Build weeks from col R (call set date) — this drives Calls Booked
-  const weekMap = new Map();
-  for (const row of leads) {
-    const d = parseDate(row[L.callScheduledDate]); // col R
-    if (!d) continue;
-    const ws = weekStartDate(d);
-    const k = dateKey(ws);
-    if (!weekMap.has(k)) weekMap.set(k, ws);
-  }
-  // Also index weeks from col K (call happened date) so we don't miss show-only weeks
-  for (const row of leads) {
-    const d = parseDate(row[L.salesCallBookedDate]); // col K
-    if (!d) continue;
-    const ws = weekStartDate(d);
-    const k = dateKey(ws);
-    if (!weekMap.has(k)) weekMap.set(k, ws);
-  }
-
-  const sortedKeys = [...weekMap.keys()].sort();
-  // Only include weeks that have fully completed (week end is before today)
-  const today = new Date(); today.setHours(0,0,0,0);
-  const allWeekStarts = sortedKeys.map(k => weekMap.get(k));
-  const completedWeekStarts = allWeekStarts.filter(ws => {
-    const we = new Date(ws); we.setDate(ws.getDate() + 6);
-    return we < today;
-  });
-  // Current week (if exists) always shown as last entry even if incomplete
-  const todayWS = weekStartDate(today);
-  const todayKey = dateKey(todayWS);
-  const hasCurrentWeek = weekMap.has(todayKey);
-  const weekStarts = hasCurrentWeek
-    ? [...completedWeekStarts.slice(-11), weekMap.get(todayKey)]
-    : completedWeekStarts.slice(-12);
-
-  return weekStarts.map(ws => {
-    const we = new Date(ws); we.setDate(ws.getDate() + 6);
-    const isCurrentWeek = sameDay(ws, todayWS);
-
-    // ── CALLS BOOKED: anchored to col K (when call OCCURRED this week)
-    // Coherent with all other metrics — same week universe
-    const callsBookedLeads = leads.filter(r => {
-      const d = parseDate(r[L.salesCallBookedDate]); // col K
-      return d && inWeek(d, ws);
-    });
-    const callsBooked = callsBookedLeads.length;
-
-    // ── SETTING RATE: anchored to col R (when call was SET this week) — leading indicator
-    // Numerator: Leads Applied col R in week + col Q = Emery
-    // Denominator: DM Index col E in week + col H = Emery (leads Emery was assigned to)
-    // Blank col H = lead never interacted with ManyChat — excluded
-    const emerySetLeads = leads.filter(r => {
-      const d = parseDate(r[L.callScheduledDate]); // col R
-      return d && inWeek(d, ws) && (r[L.source]||'').trim() === 'Emery';
-    });
-    const dmNewLeads = dms.filter(r => {
-      const d = parseDate(r[D.newLeadTS]); // col E
-      return d && inWeek(d, ws) && (r[D.setter]||'').trim() === 'Emery';
-    });
-    const bookingRate = dmNewLeads.length > 0 ? emerySetLeads.length / dmNewLeads.length : 0;
-
-    // ── ALL METRICS BELOW: anchored to col K (when call HAPPENED this week)
-    const happenedLeads = leads.filter(r => {
-      const d = parseDate(r[L.salesCallBookedDate]); // col K
-      return d && inWeek(d, ws);
-    });
-
-    // Completed = had a result (exclude Confirmed = future calls)
-    const completedLeads = happenedLeads.filter(r => COMPLETED_STATUSES.has((r[L.callStatus]||'').trim()));
-
-    // Showed = arrived at the call: Showed + Follow Up + Disqualified on sales call
-    // Used for Show Rate only
-    const showedLeads = happenedLeads.filter(r => SHOW_STATUSES.has((r[L.callStatus]||'').trim()));
-
-    // Qualified shows = Showed + Follow Up only (DQ excluded — disqualified during call)
-    // Col J not used — it only indicates pre-call qualification to book, not call outcome
-    const QUAL_SHOW_STATUSES = new Set(['Showed', 'Follow Up']);
-    const qualShowLeads = happenedLeads.filter(r => QUAL_SHOW_STATUSES.has((r[L.callStatus]||'').trim()));
-
-    // New contracts = qual shows + col N = "Yes"
-    const contractLeads = qualShowLeads.filter(r => (r[L.endInSale]||'').trim() === 'Yes');
-
-    // Net Show Rate = showed ÷ (completed - cancelled)
-    const cancelledCount = completedLeads.filter(r => (r[L.callStatus]||'').trim() === 'Cancelled').length;
-    const netDenominator = completedLeads.length - cancelledCount;
-    const showRate = netDenominator > 0 ? showedLeads.length / netDenominator : 0;
-
-    // Close rate = contracts ÷ qual shows
-    const closeRate = qualShowLeads.length > 0 ? contractLeads.length / qualShowLeads.length : 0;
-
-    // ── SETTER MTD: Emery qual shows in current month, anchored to col K
-    const monthStart = new Date(we.getFullYear(), we.getMonth(), 1);
-    const emeryQualMTD = leads.filter(r => {
-      const d = parseDate(r[L.salesCallBookedDate]); // col K
-      if (!d) return false;
-      const status = (r[L.callStatus]||'').trim();
-      // Showed or Follow Up (DQ excluded — not a qualified show)
-      return (r[L.source]||'').trim() === 'Emery'
-        && (status === 'Showed' || status === 'Follow Up')
-        && d >= monthStart && d <= we;
-    }).length;
-
-    // ── CLOSER METRICS: anchored to col K, Net Show Rate
-    function closerStats(name) {
-      const closerLeads = happenedLeads.filter(r => (r[L.salesCallWith]||'').trim() === name);
-      const closerCompleted = closerLeads.filter(r => COMPLETED_STATUSES.has((r[L.callStatus]||'').trim()));
-      const closerShowed = closerLeads.filter(r => SHOW_STATUSES.has((r[L.callStatus]||'').trim()));
-      const QUAL_SHOW_STATUSES = new Set(['Showed', 'Follow Up']);
-      const closerQual = closerLeads.filter(r => QUAL_SHOW_STATUSES.has((r[L.callStatus]||'').trim()));
-      const closerContracts = closerQual.filter(r => (r[L.endInSale]||'').trim() === 'Yes');
-      const closerCancelled = closerCompleted.filter(r => (r[L.callStatus]||'').trim() === 'Cancelled').length;
-      const netDenom = closerCompleted.length - closerCancelled;
-      return {
-        showRate: netDenom > 0 ? closerShowed.length / netDenom : 0,
-        closeRate: closerQual.length > 0 ? closerContracts.length / closerQual.length : 0,
-        calls: closerLeads.length
-      };
-    }
-
-    // ── TOOLTIP DATA
-    // Calls booked list (from col K — calls that OCCURRED this week)
-    const callsList = callsBookedLeads.map(r => ({
-      name: [(r[L.firstName]||'').trim(), (r[L.lastName]||'').trim()].filter(Boolean).join(' ') || '—',
-      source: (r[L.source]||'').trim()
-    }));
-
-    // Qualified shows list (from col K — shows that HAPPENED this week)
-    const showsList = qualShowLeads.map(r => ({
-      name: [(r[L.firstName]||'').trim(), (r[L.lastName]||'').trim()].filter(Boolean).join(' ') || '—',
-      source: (r[L.source]||'').trim(),
-      status: (r[L.callStatus]||'').trim() // to show "Follow Up" tag
-    }));
-
-    // Contracts list — includes product (col P)
-    const contractsList = contractLeads.map(r => ({
-      name: [(r[L.firstName]||'').trim(), (r[L.lastName]||'').trim()].filter(Boolean).join(' ') || '—',
-      closer: (r[L.salesCallWith]||'').trim(),
-      product: (r[L.productPurchased]||'').trim()
-    }));
-
-    // Setting data for tooltip
-    const settingData = {
-      emeryCallsSet: emerySetLeads.length,
-      dmLeadsAssigned: dmNewLeads.length
-    };
-
-    const weekNum = Math.ceil((ws - new Date(ws.getFullYear(), 0, 1)) / (7 * 24 * 3600 * 1000));
-
-    return {
-      ws, we, isCurrentWeek,
-      label: `W${String(weekNum).padStart(2,'0')}`,
-      dateRange: `${formatDateShort(ws)} – ${formatDateShort(we)}`,
-      callsBooked, qualShows: qualShowLeads.length,
-      newContracts: contractLeads.length,
-      showRate, closeRate, bookingRate,
-      setter: { bookingRate, qualShowsMTD: emeryQualMTD },
-      closer: {
-        deniz: closerStats('Deniz'),
-        joey:  closerStats('Dr. Joey')
-      },
-      callsList, showsList, contractsList, settingData
-    };
-  });
-}
-
-// ─── THRESHOLDS & CATEGORIES ──────────────────────────────────────────────────
-function cat(metric, val) {
-  const t = {
-    callsBooked:  {r:17, a:20},
-    qualShows:    {r:12, a:15},
-    newContracts: {r:3,  a:5},
-    closeRate:    {r:0.35, a:0.45},
-    showRate:     {r:0.80, a:null},
-    bookingRate:  {r:0.025, a:0.030}
-  }[metric];
-  if (!t) return 'red';
-  if (t.a && val >= t.a) return 'gold';
-  return val >= t.r ? 'green' : 'red';
-}
-const CL = {red:'RED', green:'GREEN', gold:'AMAZING'};
+function weekStart(d) { const day=d.getDay(); const diff=(day-5+7)%7; const ws=new Date(d); ws.setDate(d.getDate()-diff); ws.setHours(0,0,0,0); return ws; }
+function dateKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtShort(d) { return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate(); }
+function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function inRange(d,s,e) { return d>=s && d<=e; }
+function toInput(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function sameDay(a,b) { return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function inWeek(d,ws) { const we=new Date(ws); we.setDate(ws.getDate()+6); return d>=ws&&d<=we; }
 const pct  = v => Math.round(v*100)+'%';
 const pct1 = v => (v*100).toFixed(1)+'%';
+const dollar = v => v ? '$'+Math.round(v).toLocaleString() : '—';
 
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-function render() {
-  const w  = WEEKS[currentIdx];
-  const p  = currentIdx > 0 ? WEEKS[currentIdx-1] : null;
-  const p2 = currentIdx > 1 ? WEEKS[currentIdx-2] : null;
-
-  document.getElementById('nav-week-label').textContent = w.label;
-  document.getElementById('nav-date-range').textContent = w.dateRange;
-  document.getElementById('btn-prev').disabled = currentIdx === 0;
-  document.getElementById('btn-next').disabled = currentIdx === WEEKS.length-1;
-
-  renderScorecard(w, p, p2);
-  renderRoles(w);
-  renderHistory();
+// ─── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchSheet(tab) {
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tab)}?key=${API_KEY}`;
+  const res=await fetch(url);
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
+  const data=await res.json();
+  return (data.values||[]).slice(1);
 }
 
-function renderScorecard(w, p, p2) {
-  const metrics = [
-    {key:'callsBooked',  name:'Calls Booked',   val:w.callsBooked,   fmt:v=>v,   thresh:'Red < 17  ·  Green 17–19  ·  Amazing 20+',        type:'volume', panel:'panel-calls'},
-    {key:'qualShows',    name:'Qualified Shows', val:w.qualShows,     fmt:v=>v,   thresh:'Red < 12  ·  Green 12–14  ·  Amazing 15+',        type:'volume', panel:'panel-shows'},
-    {key:'newContracts', name:'New Contracts',   val:w.newContracts,  fmt:v=>v,   thresh:'Red < 3  ·  Green 3–4  ·  Amazing 5+',            type:'volume', panel:'panel-contracts'},
-    {key:'closeRate',    name:'Close Rate',      val:w.closeRate,     fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',     type:'chart'},
-    {key:'showRate',     name:'Net Show Rate',   val:w.showRate,      fmt:pct,    thresh:'Net · Red < 80%  ·  Green 80%+',                   type:'chart'},
-    {key:'bookingRate',  name:'Setting Rate',    val:w.bookingRate,   fmt:pct1,   thresh:'Red < 2.5%  ·  Green 2.5–2.9%  ·  Amazing 3%+',   type:'volume', panel:'panel-setting'}
+// ─── CORE CALCULATIONS ────────────────────────────────────────────────────────
+function calcWeek(ws) {
+  const we = addDays(ws,6); we.setHours(23,59,59,999);
+  const wsD = new Date(ws); wsD.setHours(0,0,0,0);
+
+  const happened = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,wsD,we); });
+  const completed = happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+  const showed = happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+  const qual = happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+  const contracts = qual.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+  const cancelled = completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
+  const netDenom = completed.length - cancelled.length;
+
+  // Gross show rate = showed / completed
+  const grossShowRate = completed.length>0 ? showed.length/completed.length : 0;
+  const netShowRate = netDenom>0 ? showed.length/netDenom : 0;
+  const closeRate = qual.length>0 ? contracts.length/qual.length : 0;
+
+  // Setting rate — all setters (Emery + Deniz) for scorecard
+  const emerySet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&(r[L.source]||'').trim()==='Emery'; });
+  const denizSet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&(r[L.source]||'').trim()==='Deniz'; });
+  const dmEmery = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Emery'; });
+  const dmDeniz = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Deniz'; });
+  const totalSet = emerySet.length + denizSet.length;
+  const totalDM = dmEmery.length + dmDeniz.length;
+  const settingRate = totalDM>0 ? totalSet/totalDM : 0;
+
+  const monthStart = new Date(we.getFullYear(),we.getMonth(),1);
+  const emeryQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Emery'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
+  const denizQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Deniz'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
+
+  function closerStats(name) {
+    const cc=happened.filter(r=>(r[L.salesCallWith]||'').trim()===name);
+    const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+    const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+    const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+    const ct=q.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
+    const nd=comp.length-canc.length;
+    const sheetCloserName = name === 'Dr. Joey' ? 'Joey' : name;
+    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we)&&(r[C.salesPerson]||'').trim()===sheetCloserName; });
+    const cashVals=closerClients.map(r=>parseFloat((r[C.cashCollected]||'').replace(/[$,]/g,''))).filter(v=>!isNaN(v)&&v>0);
+    return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash:cashVals.length>0?cashVals.reduce((a,b)=>a+b,0)/cashVals.length:0, showed:sh.length, contracts:ct.length, qual:q.length };
+  }
+
+  const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
+  const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
+  const contractsList=contracts.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+
+  return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:contracts.length,
+    closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
+    setter:{
+      emery:{rate:dmEmery.length>0?emerySet.length/dmEmery.length:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:dmEmery.length},
+      deniz:{rate:dmDeniz.length>0?denizSet.length/dmDeniz.length:0, qualMTD:denizQualMTD, callsSet:denizSet.length, dmLeads:dmDeniz.length}
+    },
+    callsList,showsList,contractsList,
+    settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM}
+  };
+}
+
+function calcRange(start, end, name, type) {
+  const s = new Date(start); s.setHours(0,0,0,0);
+  const e = new Date(end); e.setHours(23,59,59,999);
+  const monthStart = new Date(e.getFullYear(),e.getMonth(),1);
+
+  if (type==='scorecard') {
+    // Full department scorecard for arbitrary range
+    const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e); });
+    const completed=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+    const showed=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+    const qual=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+    const contracts=qual.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const cancelled=completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
+    const netDenom=completed.length-cancelled.length;
+    const grossShowRate=completed.length>0?showed.length/completed.length:0;
+    const closeRate=qual.length>0?contracts.length/qual.length:0;
+    // Setting rate — all setters
+    const emerySet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Emery'; });
+    const denizSet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Deniz'; });
+    const dmEmery=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Emery'; });
+    const dmDeniz=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Deniz'; });
+    const totalSet=emerySet.length+denizSet.length, totalDM=dmEmery.length+dmDeniz.length;
+    const settingRate=totalDM>0?totalSet/totalDM:0;
+    const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
+    const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
+    const contractsList=contracts.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+    return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
+      callsList, showsList, contractsList,
+      settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM} };
+  } else if (type==='closer') {
+    const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name; });
+    const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+    const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+    const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+    const ct=q.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
+    const nd=comp.length-canc.length;
+    // Client Mastersheet uses 'Joey' not 'Dr. Joey'
+    const sheetName = name === 'Dr. Joey' ? 'Joey' : name;
+    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e)&&(r[C.salesPerson]||'').trim()===sheetName; });
+    const cashVals=closerClients.map(r=>parseFloat((r[C.cashCollected]||'').replace(/[$,]/g,''))).filter(v=>!isNaN(v)&&v>0);
+    const avgCash=cashVals.length>0?cashVals.reduce((a,b)=>a+b,0)/cashVals.length:0;
+    const breakdown=cc.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),sale:(r[L.endInSale]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+    return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash, showed:sh.length, contracts:ct.length, qual:q.length, breakdown };
+  } else {
+    const dmLeads=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
+    const setLeads=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
+    const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
+    const comp=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+    const sh=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+    const q=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+    const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
+    const nd=comp.length-canc.length;
+    const qualMTD=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,e)&&(r[L.source]||'').trim()===name&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
+    const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
+    return { dmLeads:dmLeads.length, callsSet:setLeads.length, settingRate:dmLeads.length>0?setLeads.length/dmLeads.length:0, cancelled:canc.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, breakdown };
+  }
+}
+
+// ─── THRESHOLDS ───────────────────────────────────────────────────────────────
+function cat(metric,val) {
+  const t={callsBooked:{r:17,a:20},qualShows:{r:12,a:15},newContracts:{r:3,a:5},closeRate:{r:0.35,a:0.45},grossShowRate:{r:0.65,a:0.75},settingRate:{r:0.025,a:0.030}}[metric];
+  if(!t)return'green';
+  if(t.a&&val>=t.a)return'gold';
+  return val>=t.r?'green':'red';
+}
+const CL={red:'RED',green:'GREEN',gold:'AMAZING'};
+
+// ─── PROCESS WEEKS ────────────────────────────────────────────────────────────
+function buildWeeks() {
+  const weekMap=new Map();
+  for(const r of leadsRaw){const d=parseDate(r[L.salesCallBookedDate]);if(!d)continue;const ws=weekStart(d);weekMap.set(dateKey(ws),ws);}
+  for(const r of leadsRaw){const d=parseDate(r[L.callScheduledDate]);if(!d)continue;const ws=weekStart(d);weekMap.set(dateKey(ws),ws);}
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayWS=weekStart(today);
+  // Only include completed weeks (week end before today) + current week
+  return [...weekMap.keys()].sort().map(k=>weekMap.get(k))
+    .filter(ws => {
+      const we=addDays(ws,6);
+      return we < today || sameDay(ws,todayWS); // completed or current
+    })
+    .map(ws=>{const we=addDays(ws,6);return{ws,we,isCurrent:sameDay(ws,todayWS)};});
+}
+
+// ─── RENDER SCORECARD ─────────────────────────────────────────────────────────
+// ─── SCORECARD DATE CONTROLS ──────────────────────────────────────────────────
+function setScorecardMode(mode, btn) {
+  scDateMode = mode;
+  document.querySelectorAll('#scorecard-controls .date-mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sc-week-inputs').style.display = mode==='week'?'flex':'none';
+  document.getElementById('sc-month-inputs').style.display = mode==='month'?'flex':'none';
+  document.getElementById('sc-day-inputs').style.display = mode==='day'?'flex':'none';
+  renderScorecard();
+}
+
+function onScorecardMonthChange() {
+  renderScorecard();
+}
+
+function getScorecardRange() {
+  if (scDateMode==='week') {
+    const d = _pickerDates['sc-week'];
+    if(!d) return null;
+    const s = new Date(d); s.setHours(0,0,0,0);
+    const e = addDays(s,6); e.setHours(23,59,59,999);
+    const endEl = document.getElementById('sc-week-end-display');
+    if(endEl) endEl.textContent = fmtDateAmerican(e);
+    return {start:s, end:e, label:`${fmtDateAmerican(s)} – ${fmtDateAmerican(e)}`};
+  } else if (scDateMode==='month') {
+    const v=document.getElementById('sc-month').value;
+    if(!v) return null;
+    const [yr,mo]=v.split('-').map(Number);
+    return {start:new Date(yr,mo-1,1), end:new Date(yr,mo,0,23,59,59), label:new Date(yr,mo-1,1).toLocaleString('en-US',{month:'long',year:'numeric'})};
+  } else {
+    const d = _pickerDates['sc-day'];
+    if(!d) return null;
+    const s = new Date(d); s.setHours(0,0,0,0);
+    return {start:s, end:new Date(s.getTime()+86399999), label:fmtDateAmerican(s)};
+  }
+}
+
+function navigateScorecard(dir) {
+  if (scDateMode==='week') {
+    const d = _pickerDates['sc-week'];
+    if(!d) return;
+    const nd = addDays(d, dir*7);
+    _pickerDates['sc-week'] = nd;
+    const inp = document.getElementById('dinput-sc-week');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderScorecard();
+  } else if (scDateMode==='month') {
+    const v=document.getElementById('sc-month').value;
+    if(!v) return;
+    const [yr,mo]=v.split('-').map(Number);
+    const nd=new Date(yr,mo-1+dir,1);
+    document.getElementById('sc-month').value=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+    renderScorecard();
+  } else {
+    const d = _pickerDates['sc-day'];
+    if(!d) return;
+    const nd = addDays(d, dir);
+    _pickerDates['sc-day'] = nd;
+    const inp = document.getElementById('dinput-sc-day');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderScorecard();
+  }
+}
+
+function renderScorecard() {
+  if (!leadsRaw.length) return;
+  const range = getScorecardRange();
+  if (!range) return;
+
+  // Calculate metrics for arbitrary date range
+  const w = calcRange(range.start, range.end, null, 'scorecard');
+  if (!w) return;
+
+  // For trend badges we still need prev weeks
+  const prev  = currentIdx>0 ? calcWeek(WEEKS[currentIdx-1].ws) : null;
+  const prev2 = currentIdx>1 ? calcWeek(WEEKS[currentIdx-2].ws) : null;
+
+  const periodEl = document.getElementById('sc-period-label');
+  if(periodEl) periodEl.textContent = range.label;
+
+  const metrics=[
+    {key:'callsBooked',  name:'Calls Booked',      val:w.callsBooked,    fmt:v=>v,   thresh:'Red < 17  ·  Green 17–19  ·  Amazing 20+',       type:'volume',panel:'panel-calls'},
+    {key:'qualShows',    name:'Qualified Shows',    val:w.qualShows,      fmt:v=>v,   thresh:'Red < 12  ·  Green 12–14  ·  Amazing 15+',       type:'volume',panel:'panel-shows'},
+    {key:'newContracts', name:'New Contracts',      val:w.newContracts,   fmt:v=>v,   thresh:'Red < 3  ·  Green 3–4  ·  Amazing 5+',           type:'volume',panel:'panel-contracts'},
+    {key:'closeRate',    name:'Close Rate',         val:w.closeRate,      fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',    type:'chart'},
+    {key:'grossShowRate',name:'Gross Show Rate',    val:w.grossShowRate,  fmt:pct,    thresh:'Red < 65%  ·  Green 65–74%  ·  Amazing 75%+',    type:'chart'},
+    {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2.5%  ·  Green 2.5–2.9%  ·  Amazing 3%+', type:'volume',panel:'panel-setting'},
   ];
 
-  let greens = 0;
-  document.getElementById('scorecard-grid').innerHTML = metrics.map(m => {
-    const c = cat(m.key, m.val);
-    if (c !== 'red') greens++;
-
-    let tb = '';
-    if (p) {
-      const pc = cat(m.key, p[m.key]);
-      if (c === 'red' && pc === 'red') {
-        const s = p2 && cat(m.key, p2[m.key]) === 'red' ? '3rd' : '2nd';
-        tb = `<span class="badge badge-alert">⚠ ${s} week red</span>`;
-      }
-    }
-
-    const hint = m.type === 'volume' ? 'Click · view breakdown' : 'Click · view trend';
+  let reds=0;
+  document.getElementById('scorecard-grid').innerHTML=metrics.map(m=>{
+    const c=cat(m.key,m.val); if(c==='red')reds++;
+    const hint=m.type==='volume'?'Click · view breakdown':'Click · view trend';
     return `<div class="metric-card ${c}" onclick="handleClick(event,'${m.key}','${m.type}','${m.panel||''}')">
-      <div class="metric-top">
-        <span class="metric-name">${m.name}</span>
-        <div class="metric-badges"><span class="badge badge-${c}">${CL[c]}</span>${tb}</div>
-      </div>
+      <div class="metric-top"><span class="metric-name">${m.name}</span><div class="metric-badges"><span class="badge badge-${c}">${CL[c]}</span></div></div>
       <div class="metric-value">${m.fmt(m.val)}</div>
       <div class="metric-threshold">${m.thresh}</div>
-      <div class="metric-hint">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H5M10 2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        ${hint}
-      </div>
+      <div class="metric-hint"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H5M10 2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${hint}</div>
     </div>`;
   }).join('');
 
-  const s = document.getElementById('scorecard-summary');
-  const reds = 6 - greens;
-  if (reds === 0) { s.textContent = '✦ All 6 green'; s.style.color = 'var(--green)'; }
-  else if (reds === 1) { s.textContent = '1 of 6 red'; s.style.color = 'var(--red)'; }
-  else { s.textContent = `${reds} of 6 red`; s.style.color = 'var(--red)'; }
+  const s=document.getElementById('scorecard-summary');
+  if(reds===0){s.textContent='✦ All 6 green';s.style.color='var(--green)';}
+  else{s.textContent=`${reds} of 6 red`;s.style.color='var(--red)';}
+
+  window._lastW = w;
+  renderHistory();
 }
 
-function renderRoles(w) {
-  document.getElementById('setter-body').innerHTML = [
-    { label:'Setting Rate', sub:'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
-      emery: { v: w.setter.bookingRate, fmt: pct1,
-        c: w.setter.bookingRate >= 0.030 ? 'gold' : w.setter.bookingRate >= 0.025 ? 'green' : 'red' }},
-    { label:'Qual. Shows MTD', sub:'Target: 30 / month · paced by day',
-      emery: { v: w.setter.qualShowsMTD, fmt: v => v+' / 30',
-        c: (() => {
-          // Pace: 30 / days in month * day of month at week end
-          const we = w.we;
-          const daysInMonth = new Date(we.getFullYear(), we.getMonth()+1, 0).getDate();
-          const dayOfMonth = Math.min(we.getDate(), daysInMonth);
-          const expected = (30 / daysInMonth) * dayOfMonth;
-          const actual = w.setter.qualShowsMTD;
-          if (actual >= expected * 1.10) return 'gold';      // ahead (10%+ above pace)
-          if (actual >= expected * 0.90) return 'green';     // on track (within 10%)
-          return 'red';                                       // behind (10%+ below pace)
-        })()
-      }}
-  ].map(r => `<tr>
-    <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
-    <td><div class="role-dot-wrap"><div class="role-dot ${r.emery.c}"><div class="role-dot-inner"></div><div class="role-tooltip">${r.emery.fmt(r.emery.v)}</div></div></div></td>
-  </tr>`).join('');
-
-  document.getElementById('closer-body').innerHTML = [
-    { label:'Net Show Rate', sub:'Red < 80%  ·  Green 80%+',
-      deniz: { v: w.closer.deniz.showRate, fmt: pct, c: w.closer.deniz.showRate >= 0.80 ? 'green' : 'red' },
-      joey:  { v: w.closer.joey.showRate,  fmt: pct }},
-    { label:'Close Rate', sub:'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
-      deniz: { v: w.closer.deniz.closeRate, fmt: pct,
-        c: w.closer.deniz.closeRate >= 0.40 ? 'gold' : w.closer.deniz.closeRate >= 0.30 ? 'green' : 'red' },
-      joey:  { v: w.closer.joey.closeRate, fmt: pct }}
-  ].map(r => `<tr>
-    <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
-    <td><div class="role-dot-wrap"><div class="role-dot ${r.deniz.c}"><div class="role-dot-inner"></div><div class="role-tooltip">${r.deniz.fmt(r.deniz.v)}</div></div></div></td>
-    <td>
-      <div class="role-dot-wrap"><div class="role-dot ctx"><div class="role-dot-inner"></div><div class="role-tooltip">${r.joey.fmt(r.joey.v)} · context</div></div></div>
-      <span class="ctx-note">context</span>
-    </td>
-  </tr>`).join('');
+function render() {
+  // Legacy: keep for history table navigation — delegates to renderScorecard
+  renderScorecard();
 }
 
 function renderHistory() {
-  // Show last 8 completed weeks only (exclude current incomplete week from history table)
-  const completedWeeks = WEEKS.filter(w => !w.isCurrentWeek);
-  const rows = completedWeeks.slice(-8);
-  document.getElementById('history-body').innerHTML = [...rows].reverse().map((w, i) => {
-    const idx = WEEKS.indexOf(w);
-    const c = {
-      cb: cat('callsBooked',  w.callsBooked),
-      qs: cat('qualShows',    w.qualShows),
-      nc: cat('newContracts', w.newContracts),
-      cr: cat('closeRate',    w.closeRate),
-      sr: cat('showRate',     w.showRate),
-      br: cat('bookingRate',  w.bookingRate)
-    };
-    return `<tr class="${w.isCurrentWeek ? 'current-row' : ''}" onclick="jumpToWeek(${idx})">
-      <td>${w.label}${w.isCurrentWeek ? ' ←' : ''}</td>
-      <td>${w.dateRange}</td>
+  const completed=WEEKS.filter(w=>!w.isCurrent);
+  const rows=completed.slice(-8);
+  document.getElementById('history-body').innerHTML=[...rows].reverse().map(wk=>{
+    const w=calcWeek(wk.ws);
+    const idx=WEEKS.indexOf(wk);
+    const c={cb:cat('callsBooked',w.callsBooked),qs:cat('qualShows',w.qualShows),nc:cat('newContracts',w.newContracts),cr:cat('closeRate',w.closeRate),sr:cat('grossShowRate',w.grossShowRate),br:cat('settingRate',w.settingRate)};
+    const weekNum=Math.ceil((wk.ws-new Date(wk.ws.getFullYear(),0,1))/(7*24*3600*1000));
+    return `<tr class="${wk.isCurrent?'current-row':''}" onclick="jumpToWeek(${idx})">
+      <td>W${String(weekNum).padStart(2,'0')}${wk.isCurrent?' ←':''}</td>
+      <td>${fmtShort(wk.ws)} – ${fmtShort(wk.we)}</td>
       <td><span class="hist-pill ${c.cb}">${w.callsBooked}</span></td>
       <td><span class="hist-pill ${c.qs}">${w.qualShows}</span></td>
       <td><span class="hist-pill ${c.nc}">${w.newContracts}</span></td>
       <td><span class="hist-pill ${c.cr}">${pct(w.closeRate)}</span></td>
-      <td><span class="hist-pill ${c.sr}">${pct(w.showRate)}</span></td>
-      <td><span class="hist-pill ${c.br}">${pct1(w.bookingRate)}</span></td>
+      <td><span class="hist-pill ${c.sr}">${pct(w.grossShowRate)}</span></td>
+      <td><span class="hist-pill ${c.br}">${pct1(w.settingRate)}</span></td>
     </tr>`;
   }).join('');
 }
 
+// ─── INDIVIDUAL DASHBOARDS ────────────────────────────────────────────────────
+// ─── DATE PICKER SYSTEM ───────────────────────────────────────────────────────
+// Stores selected dates per picker key
+const _pickerDates = {};
+let _openPicker = null; // currently open picker key
+
+function fmtDateAmerican(s) {
+  if (!s) return '—';
+  const d = (s instanceof Date) ? s : parseDate(String(s));
+  if (!d) return String(s);
+  return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+}
+
+function parseMDY(s) {
+  // Parse MM/DD/YYYY user input
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[1]-1, +m[2]);
+  return parseDate(s);
+}
+
+function openPicker(key) {
+  // Close any open picker first
+  if (_openPicker && _openPicker !== key) closePicker(_openPicker);
+  const popup = document.getElementById('pop-'+key);
+  if (!popup) return;
+  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+  _openPicker = popup.style.display === 'block' ? key : null;
+  if (popup.style.display === 'block') buildPickerCalendar(key);
+  // Close on outside click
+  setTimeout(() => {
+    const handler = (e) => {
+      const container = document.getElementById('dpicker-'+key);
+      if (container && !container.contains(e.target)) {
+        closePicker(key);
+        document.removeEventListener('click', handler);
+      }
+    };
+    document.addEventListener('click', handler);
+  }, 10);
+}
+
+function closePicker(key) {
+  const popup = document.getElementById('pop-'+key);
+  if (popup) popup.style.display = 'none';
+  if (_openPicker === key) _openPicker = null;
+}
+
+function buildPickerCalendar(key) {
+  const popup = document.getElementById('pop-'+key);
+  if (!popup) return;
+  const sel = _pickerDates[key] || new Date();
+  // Use stored viewing month or default to sel month
+  if (!popup._viewing) popup._viewing = new Date(sel.getFullYear(), sel.getMonth(), 1);
+  renderPickerCalendar(key, popup._viewing);
+}
+
+function renderPickerCalendar(key, viewing) {
+  const popup = document.getElementById('pop-'+key);
+  if (!popup) return;
+  popup._viewing = viewing;
+  const sel = _pickerDates[key];
+  const selKey = sel ? dateKey(sel) : null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = dateKey(today);
+  const mos = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const yr = viewing.getFullYear(), mo = viewing.getMonth();
+  const first = new Date(yr,mo,1).getDay();
+  const daysInMo = new Date(yr,mo+1,0).getDate();
+  let cells = '';
+  let day = 1 - first;
+  for(let row=0;row<6;row++){
+    for(let col=0;col<7;col++){
+      if(day<1||day>daysInMo){ cells+=`<div></div>`; }
+      else {
+        const dk = `${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const isSel = dk===selKey, isToday = dk===todayKey;
+        cells+=`<div class="cpk-day${isSel?' cpk-sel':''}${isToday?' cpk-today':''}" onclick="pickDate('${key}','${dk}')">${day}</div>`;
+      }
+      day++;
+    }
+  }
+  popup.innerHTML = `
+    <div class="cpk-header">
+      <button class="cpk-nav" onclick="pickMonth('${key}',-1)">‹</button>
+      <span class="cpk-month-label">${mos[mo]} ${yr}</span>
+      <button class="cpk-nav" onclick="pickMonth('${key}',1)">›</button>
+    </div>
+    <div class="cpk-grid">
+      ${days.map(d=>`<div class="cpk-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>`;
+}
+
+function pickMonth(key, dir) {
+  const popup = document.getElementById('pop-'+key);
+  if (!popup || !popup._viewing) return;
+  const v = popup._viewing;
+  popup._viewing = new Date(v.getFullYear(), v.getMonth()+dir, 1);
+  renderPickerCalendar(key, popup._viewing);
+}
+
+function pickDate(key, dk) {
+  _pickerDates[key] = new Date(dk+'T00:00:00');
+  const input = document.getElementById('dinput-'+key);
+  if (input) input.value = fmtDateAmerican(_pickerDates[key]);
+  const parts = key.split('-');
+  const prefix = parts[0];
+  const mode = parts.slice(1).join('-');
+  if (mode === 'week') {
+    const endEl = document.getElementById(prefix+'-week-end-display');
+    if (endEl) endEl.textContent = fmtDateAmerican(addDays(_pickerDates[key],6));
+  }
+  closePicker(key);
+  if (prefix === 'closer') renderCloserIndiv();
+  else if (prefix === 'setter') renderSetterIndiv();
+  else if (prefix === 'sc') renderScorecard();
+}
+
+function onDateInput(key, val) {
+  const d = parseMDY(val);
+  if (d && !isNaN(d.getTime())) {
+    _pickerDates[key] = d;
+    const parts = key.split('-');
+    const prefix = parts[0];
+    const mode = parts.slice(1).join('-');
+    if (mode === 'week') {
+      const endEl = document.getElementById(prefix+'-week-end-display');
+      if (endEl) endEl.textContent = fmtDateAmerican(addDays(d,6));
+    }
+    if (prefix === 'closer') renderCloserIndiv();
+    else if (prefix === 'setter') renderSetterIndiv();
+    else if (prefix === 'sc') renderScorecard();
+  }
+}
+
+function getDashRange(prefix, mode) {
+  if (mode==='week') {
+    const d = _pickerDates[prefix+'-week'];
+    if(!d) return null;
+    const s = new Date(d); s.setHours(0,0,0,0);
+    const e = addDays(s,6); e.setHours(23,59,59,999);
+    return{start:s,end:e,label:`${fmtDateAmerican(s)} – ${fmtDateAmerican(e)}`};
+  } else if (mode==='month') {
+    const v=document.getElementById(prefix+'-month').value;
+    if(!v)return null;
+    const [yr,mo]=v.split('-').map(Number);
+    return{start:new Date(yr,mo-1,1),end:new Date(yr,mo,0,23,59,59),label:new Date(yr,mo-1,1).toLocaleString('en-US',{month:'long',year:'numeric'})};
+  } else {
+    const d = _pickerDates[prefix+'-day'];
+    if(!d) return null;
+    const s = new Date(d); s.setHours(0,0,0,0);
+    return{start:s,end:new Date(s.getTime()+86399999),label:fmtDateAmerican(s)};
+  }
+}
+
+
+
+function statusPill(s) {
+  const map={Showed:'status-showed','Follow Up':'status-followup',Cancelled:'status-cancelled','No Show':'status-noshow','Disqualified on sales call':'status-dq'};
+  return `<span class="status-pill ${map[s]||'status-dq'}">${s||'—'}</span>`;
+}
+
+function toggleBtn(id,current,pctLabel,numLabel,onclick) {
+  const showPct=current==='pct';
+  return `<button class="toggle-btn" onclick="${onclick}">${showPct?numLabel:pctLabel}</button>`;
+}
+
+function makeIndivCard(label, thresh, c, displayVal, toggleBtn, clickFn) {
+  const onclick = clickFn ? `onclick="${clickFn}"` : '';
+  const cursor = clickFn ? 'cursor:pointer;' : 'cursor:default;';
+  return `<div class="metric-card ${c}" style="${cursor}" ${onclick}>
+    <div class="metric-top">
+      <span class="metric-name">${label}</span>
+      ${toggleBtn ? `<div class="metric-badges">${toggleBtn}</div>` : ''}
+    </div>
+    <div class="metric-value">${displayVal}</div>
+    ${thresh ? `<div class="metric-threshold">${thresh}</div>` : ''}
+    ${clickFn ? `<div class="metric-hint"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H5M10 2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Click · view breakdown</div>` : ''}
+  </div>`;
+}
+
+function renderCloserIndiv() {
+  const name=document.getElementById('closer-person').value;
+  const range=getDashRange('closer',closerDateMode);
+  if(!range||!leadsRaw.length)return;
+  const d=calcRange(range.start,range.end,name,'closer');
+  const displayName=name==='Dr. Joey'?'Joey':name;
+  document.getElementById('closer-indiv-title').textContent=`${displayName} — Closer`;
+  document.getElementById('closer-indiv-period').textContent=range.label;
+
+  // Pre-calculate all values cleanly
+  const cancelPct = d.calls>0 ? d.cancelled/d.calls : 0;
+  const cancelPctStr = pct(cancelPct);       // e.g. "18%"
+  const cancelNum = d.cancelled;             // e.g. 5
+  const netSRPctStr = pct(d.netSR);          // e.g. "94%"
+  const netSRNum = d.showed;                 // e.g. 15 (showed count)
+  const closeRatePctStr = pct(d.closeRate);  // e.g. "40%"
+  const closeRateNum = d.contracts;          // e.g. 6
+
+  const cCancelMode = closerToggle.cancelled;
+  const cNetMode    = closerToggle.netShow;
+  const cCloseMode  = closerToggle.closeRate;
+
+  // Store breakdown for panel access
+  window._closerBreakdown = d.breakdown;
+  window._closerName = displayName;
+
+  const cards = [
+    makeIndivCard(
+      'Calls Scheduled', 'Total calls in period',
+      'neutral', d.calls, null,
+      `openIndivPanel('closer-calls', event)`
+    ),
+    makeIndivCard(
+      'Calls Cancelled',
+      cCancelMode==='num' ? `${cancelPctStr} of scheduled` : `${cancelNum} total`,
+      'neutral',
+      cCancelMode==='num' ? cancelNum : cancelPctStr,
+      `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.cancelled='${cCancelMode==='num'?'pct':'num'}';renderCloserIndiv()">${cCancelMode==='num'?`% ${cancelPctStr}`:`# ${cancelNum}`}</button>`,
+      `openIndivPanel('closer-cancelled', event)`
+    ),
+    makeIndivCard(
+      'Net Show Rate', 'Red < 80%  ·  Green 80%+',
+      d.netSR>=0.80?'green':'red',
+      cNetMode==='pct' ? netSRPctStr : netSRNum,
+      `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.netShow='${cNetMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
+      null
+    ),
+    makeIndivCard(
+      'Close Rate', 'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
+      d.closeRate>=0.40?'gold':d.closeRate>=0.30?'green':'red',
+      cCloseMode==='pct' ? closeRatePctStr : closeRateNum,
+      `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.closeRate='${cCloseMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cCloseMode==='pct'?`# ${closeRateNum}`:`% ${closeRatePctStr}`}</button>`,
+      `openIndivPanel('closer-contracts', event)`
+    ),
+    makeIndivCard(
+      'Avg Cash Collected', 'Per contract closed',
+      d.avgCash>0?'green':'neutral', dollar(d.avgCash), null, null
+    ),
+  ];
+
+  document.getElementById('closer-indiv-body').innerHTML =
+    `<div class="scorecard-grid">${cards.join('')}</div>`;
+
+  document.getElementById('closer-breakdown').innerHTML=d.breakdown.map(r=>{
+    const saleTag=r.sale==='Yes'?`<span class="status-pill status-closed">Closed</span>`:'—';
+    return `<tr><td>${r.name}</td><td>${fmtDateAmerican(r.callDate)}</td><td>${statusPill(r.status)}</td><td>${saleTag}</td><td style="color:var(--text-muted)">${r.product||'—'}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:20px;">No data for this period</td></tr>';
+}
+
+function renderSetterIndiv() {
+  const name=document.getElementById('setter-person').value;
+  const range=getDashRange('setter',setterDateMode);
+  if(!range||!leadsRaw.length)return;
+  const d=calcRange(range.start,range.end,name,'setter');
+  const target=name==='Emery'?30:10;
+  document.getElementById('setter-indiv-title').textContent=`${name} — Setter`;
+  document.getElementById('setter-indiv-period').textContent=range.label;
+
+  // Pre-calculate all values cleanly
+  const cancelPct    = d.callsSet>0 ? d.cancelled/d.callsSet : 0;
+  const cancelPctStr = pct(cancelPct);       // e.g. "22%"
+  const cancelNum    = d.cancelled;          // e.g. 3
+  const sRatePctStr  = pct1(d.settingRate);  // e.g. "2.7%"
+  const sRateNum     = d.callsSet;           // e.g. 14 (calls set)
+  const netSRPctStr  = pct(d.netSR);         // e.g. "94%"
+  const netSRNum     = d.qualPeriod;         // e.g. 12 (qual shows)
+
+  const sCancelMode = setterToggle.cancelled;
+  const sRateMode   = setterToggle.settingRate;
+  const sNetMode    = setterToggle.netShow;
+
+  // Store breakdown for panel access
+  window._setterBreakdown = d.breakdown;
+
+  const cards = [
+    makeIndivCard(
+      'Leads Received', 'Assigned in period',
+      'neutral', d.dmLeads, null, null
+    ),
+    makeIndivCard(
+      'Setting Rate', 'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
+      cat('settingRate', d.settingRate),
+      sRateMode==='pct' ? sRatePctStr : sRateNum,
+      `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.settingRate='${sRateMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sRateMode==='pct'?`# ${sRateNum}`:`% ${sRatePctStr}`}</button>`,
+      `openIndivPanel('setter-calls', event)`
+    ),
+    makeIndivCard(
+      'Calls Cancelled',
+      sCancelMode==='num' ? `${cancelPctStr} of calls set` : `${cancelNum} total`,
+      'neutral',
+      sCancelMode==='num' ? cancelNum : cancelPctStr,
+      `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.cancelled='${sCancelMode==='num'?'pct':'num'}';renderSetterIndiv()">${sCancelMode==='num'?`% ${cancelPctStr}`:`# ${cancelNum}`}</button>`,
+      `openIndivPanel('setter-cancelled', event)`
+    ),
+    makeIndivCard(
+      'Net Show Rate', 'Red < 80%  ·  Green 80%+',
+      d.netSR>=0.80?'green':'red',
+      sNetMode==='pct' ? netSRPctStr : netSRNum,
+      `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.netShow='${sNetMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
+      null
+    ),
+    makeIndivCard(
+      'Qualified Shows MTD', `Target: ${target} / month`,
+      'neutral', d.qualMTD, null,
+      `openIndivPanel('setter-qualified', event)`
+    ),
+  ];
+
+  document.getElementById('setter-indiv-body').innerHTML =
+    `<div class="scorecard-grid">${cards.join('')}</div>`;
+
+  document.getElementById('setter-breakdown').innerHTML=d.breakdown.map(r=>{
+    return `<tr><td>${r.name}</td><td>${fmtDateAmerican(r.setDate)}</td><td>${fmtDateAmerican(r.callDate)||'—'}</td><td>${statusPill(r.status)}</td><td style="color:${r.qualified==='Yes'?'var(--green)':'var(--text-faint)'}">${r.qualified}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:20px;">No data for this period</td></tr>';
+}
+
+// ─── COMPARISON DASHBOARDS ────────────────────────────────────────────────────
+// Comparison value cell — colored number, no dot
+function compCell(val, fmt, c, ctxNote) {
+  const colorMap = {green:'var(--green)', red:'var(--red)', gold:'var(--gold)', neutral:'var(--text-muted)'};
+  const color = colorMap[c] || 'var(--text-muted)';
+  const bgMap = {green:'var(--green-bg)', red:'var(--red-bg)', gold:'var(--gold-bg)', neutral:'var(--surface-2)'};
+  const bg = bgMap[c] || 'var(--surface-2)';
+  const borderMap = {green:'var(--green-border)', red:'var(--red-border)', gold:'var(--gold-border)', neutral:'var(--border)'};
+  const border = borderMap[c] || 'var(--border)';
+  return `<td>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <span style="font-family:var(--mono);font-size:20px;font-weight:600;color:${color};background:${bg};border:1.5px solid ${border};padding:6px 14px;border-radius:8px;display:inline-block;">${fmt(val)}</span>
+      ${ctxNote ? `<span class="ctx-note">${ctxNote}</span>` : ''}
+    </div>
+  </td>`;
+}
+
+function renderCloserComp() {
+  const wk=WEEKS[currentIdx];
+  const w=calcWeek(wk.ws);
+  document.getElementById('closer-comp-period').textContent=`${fmtShort(wk.ws)} – ${fmtShort(wk.we)}`;
+  const rows=[
+    {label:'Calls Scheduled',sub:'Total calls in period',
+      deniz:{v:w.closer.deniz.calls,fmt:v=>v,c:'neutral'},
+      joey:{v:w.closer.joey.calls,fmt:v=>v,ctx:'context'}},
+    {label:'Calls Cancelled',sub:'Number cancelled',
+      deniz:{v:w.closer.deniz.cancelled,fmt:v=>v,c:'neutral'},
+      joey:{v:w.closer.joey.cancelled,fmt:v=>v,ctx:'context'}},
+    {label:'Net Show Rate',sub:'Red < 80%  ·  Green 80%+',
+      deniz:{v:w.closer.deniz.netSR,fmt:pct,c:w.closer.deniz.netSR>=0.80?'green':'red'},
+      joey:{v:w.closer.joey.netSR,fmt:pct,ctx:'context'}},
+    {label:'Close Rate',sub:'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
+      deniz:{v:w.closer.deniz.closeRate,fmt:pct,c:w.closer.deniz.closeRate>=0.40?'gold':w.closer.deniz.closeRate>=0.30?'green':'red'},
+      joey:{v:w.closer.joey.closeRate,fmt:pct,ctx:'context'}},
+    {label:'Avg Cash Collected',sub:'Per contract closed',
+      deniz:{v:w.closer.deniz.avgCash,fmt:dollar,c:w.closer.deniz.avgCash>0?'green':'neutral'},
+      joey:{v:w.closer.joey.avgCash,fmt:dollar,ctx:'context'}},
+  ];
+  document.getElementById('closer-comp-body').innerHTML=rows.map(r=>`<tr>
+    <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
+    ${compCell(r.deniz.v, r.deniz.fmt, r.deniz.c, null)}
+    ${compCell(r.joey.v, r.joey.fmt, 'neutral', 'context')}
+  </tr>`).join('');
+}
+
+function renderSetterComp() {
+  const wk=WEEKS[currentIdx];
+  const w=calcWeek(wk.ws);
+  document.getElementById('setter-comp-period').textContent=`${fmtShort(wk.ws)} – ${fmtShort(wk.we)}`;
+
+  const daysInMonth=new Date(wk.we.getFullYear(),wk.we.getMonth()+1,0).getDate();
+  const dayOfMonth=Math.min(wk.we.getDate(),daysInMonth);
+  function paceCat(actual,target){ const exp=(target/daysInMonth)*dayOfMonth; if(actual>=exp*1.10)return'gold'; if(actual>=exp*0.90)return'green'; return'red'; }
+
+  const rows=[
+    {label:'Setting Rate',sub:'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
+      emery:{v:w.setter.emery.rate,fmt:pct1,c:cat('settingRate',w.setter.emery.rate)},
+      deniz:{v:w.setter.deniz.rate,fmt:pct1,c:cat('settingRate',w.setter.deniz.rate)}},
+    {label:'Calls Set',sub:'Total in period',
+      emery:{v:w.setter.emery.callsSet,fmt:v=>v,c:'neutral'},
+      deniz:{v:w.setter.deniz.callsSet,fmt:v=>v,c:'neutral'}},
+    {label:'Qual. Shows MTD',sub:'Target: Emery 30 · Deniz 10',
+      emery:{v:w.setter.emery.qualMTD,fmt:v=>v+' / 30',c:paceCat(w.setter.emery.qualMTD,30)},
+      deniz:{v:w.setter.deniz.qualMTD,fmt:v=>v+' / 10',c:paceCat(w.setter.deniz.qualMTD,10)}},
+  ];
+  document.getElementById('setter-comp-body').innerHTML=rows.map(r=>`<tr>
+    <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
+    ${compCell(r.emery.v, r.emery.fmt, r.emery.c, null)}
+    ${compCell(r.deniz.v, r.deniz.fmt, r.deniz.c, null)}
+  </tr>`).join('');
+}
+
+// ─── DASH MODE / DATE MODE ────────────────────────────────────────────────────
+function setDashMode(tab, mode, btn) {
+  document.querySelectorAll(`#${tab}-mode-indiv, #${tab}-mode-comp`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`${tab}-view-individual`).classList.toggle('active', mode==='individual');
+  document.getElementById(`${tab}-view-comparison`).classList.toggle('active', mode==='comparison');
+  document.getElementById(`${tab}-indiv-controls`).style.display = mode==='individual'?'flex':'none';
+  if(mode==='comparison'){tab==='closer'?renderCloserComp():renderSetterComp();}
+}
+
+function setCloserDateMode(mode, btn) {
+  closerDateMode=mode;
+  document.querySelectorAll('#tab-closer .date-mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('closer-week-inputs').style.display=mode==='week'?'flex':'none';
+  document.getElementById('closer-month-inputs').style.display=mode==='month'?'flex':'none';
+  document.getElementById('closer-day-inputs').style.display=mode==='day'?'flex':'none';
+  renderCloserIndiv();
+}
+
+function setSetterDateMode(mode, btn) {
+  setterDateMode=mode;
+  document.querySelectorAll('#tab-setter .date-mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('setter-week-inputs').style.display=mode==='week'?'flex':'none';
+  document.getElementById('setter-month-inputs').style.display=mode==='month'?'flex':'none';
+  document.getElementById('setter-day-inputs').style.display=mode==='day'?'flex':'none';
+  renderSetterIndiv();
+}
+
 // ─── PANELS ───────────────────────────────────────────────────────────────────
-function handleClick(e, key, type, panelId) {
+const DEFS={
+  callsBooked:'<strong>Calls Booked</strong> — Total calls that occurred this week (col K). Same universe as all other metrics.',
+  qualShows:'<strong>Qualified Shows</strong> — Showed or Follow Up this week. DQ excluded.',
+  newContracts:'<strong>New Contracts</strong> — Qualified shows that closed (col N = Yes), anchored to call date.',
+  closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
+  grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health.',
+  settingRate:'<strong>Setting Rate</strong> — Calls SET by Emery (col R) \u00f7 leads assigned to Emery (DM Index col H). Blank col H excluded.'
+};
+
+function handleClick(e,key,type,panelId) {
+  e.stopPropagation(); closeAllPanels();
+  const rect=e.currentTarget.getBoundingClientRect();
+  const w=window._lastW; if(!w)return;
+  type==='volume'?openVolumePanel(panelId,key,w,rect):openChartPanel(key,rect);
+}
+
+function openVolumePanel(panelId,key,w,rect) {
+  const panel=document.getElementById(panelId);
+  if(key==='settingRate'){
+    const sd=w.settingData;
+    document.getElementById('summary-setting').innerHTML=[
+      {n:sd.emerySet,l:'Emery Set'},{n:sd.denizSet,l:'Deniz Set'},
+      {n:sd.totalDM,l:'Total Leads'},{n:pct1(w.settingRate),l:'Dept Rate'}
+    ].map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
+    const d=document.getElementById('def-setting'); if(d)d.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
+    positionAndShow(panel,rect); return;
+  }
+  const suffix=panelId.replace('panel-','');
+  const listEl=document.getElementById('list-'+suffix);
+  const sumEl=document.getElementById('summary-'+suffix);
+  let leads,stats;
+  if(key==='callsBooked'){leads=w.callsList;const e=leads.filter(l=>l.source==='Emery').length,d=leads.filter(l=>l.source==='Deniz').length,i=leads.length-e-d;stats=[{n:e,l:'Emery'},{n:d,l:'Deniz'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
+  else if(key==='qualShows'){leads=w.showsList;const e=leads.filter(l=>l.source==='Emery').length,i=leads.length-e;stats=[{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
+  else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product}));const d=w.contractsList.filter(l=>l.closer==='Deniz').length,j=w.contractsList.filter(l=>l.closer==='Dr. Joey').length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];}
+  listEl.innerHTML=leads.map(l=>{
+    let lbl,cls;
+    if(key==='newContracts'){lbl=l.source==='Dr. Joey'?'Joey':l.source||'—';cls=l.source==='Dr. Joey'?'src-joey':'src-deniz';}
+    else{const iE=l.source==='Emery',iD=l.source==='Deniz';lbl=iE?'Emery':iD?'Deniz':'Inbound';cls=iE?'src-emery':iD?'src-deniz':'src-inbound';}
+    const fuTag=key==='qualShows'&&l.status==='Follow Up'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`:'';
+    const prodTag=key==='newContracts'&&l.product?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`:'';
+    return `<div class="lead-row"><span class="lead-name">${l.name}${fuTag}${prodTag}</span><span class="lead-source ${cls}">${lbl}</span></div>`;
+  }).join('')||'<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
+  sumEl.innerHTML=stats.map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
+  const def=document.getElementById('def-'+suffix); if(def&&DEFS[key])def.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
+  positionAndShow(panel,rect);
+}
+
+function openChartPanel(key,rect) {
+  const panel=document.getElementById('panel-chart');
+  const titles={closeRate:'Close Rate · Last 8 Weeks',grossShowRate:'Gross Show Rate · Last 8 Weeks',settingRate:'Setting Rate · Last 8 Weeks'};
+  document.getElementById('panel-chart-title').textContent=titles[key]||key;
+  const completed=WEEKS.filter(w=>!w.isCurrent).slice(-8);
+  const labels=completed.map(wk=>{const n=Math.ceil((wk.ws-new Date(wk.ws.getFullYear(),0,1))/(7*24*3600*1000));return`W${String(n).padStart(2,'0')}`;});
+  const vals=completed.map(wk=>{const w=calcWeek(wk.ws);return key==='settingRate'?parseFloat((w[key]*100).toFixed(1)):Math.round(w[key]*100);});
+  const thresh={closeRate:35,grossShowRate:65,settingRate:2.5}[key];
+  const def=document.getElementById('def-chart'); if(def&&DEFS[key])def.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
+  positionAndShow(panel,rect);
+  if(trendChart){trendChart.destroy();trendChart=null;}
+  setTimeout(()=>{
+    trendChart=new Chart(document.getElementById('trendChart').getContext('2d'),{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#2278AC',backgroundColor:'rgba(34,120,172,0.06)',fill:true,tension:0.35,pointRadius:4,pointBackgroundColor:vals.map(v=>v>=thresh?'#1A9E5C':'#C93A3A'),pointBorderColor:'#fff',pointBorderWidth:1.5},{data:labels.map(()=>thresh),borderColor:'rgba(8,13,26,0.12)',borderDash:[4,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#080D1A',titleColor:'rgba(255,255,255,0.5)',bodyColor:'#fff',borderColor:'rgba(34,120,172,0.3)',borderWidth:1,padding:10,callbacks:{label:c=>` ${c.raw}%`}}},scales:{x:{ticks:{color:'#A0AEBF',font:{size:10,family:"'DM Mono',monospace"}},grid:{color:'rgba(0,0,0,0.05)'}},y:{ticks:{color:'#A0AEBF',font:{size:10,family:"'DM Mono',monospace"},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.05)'},beginAtZero:false}}}});
+  },50);
+}
+
+function positionAndShow(panel,rect) {
+  panel.classList.add('active');document.getElementById('overlay').classList.add('active');
+  const pw=340;let left=rect.left+window.scrollX,top=rect.bottom+window.scrollY+10;
+  if(left+pw>window.innerWidth-16)left=window.innerWidth-pw-16;
+  if(top+320>window.innerHeight+window.scrollY)top=rect.top+window.scrollY-320-10;
+  panel.style.left=left+'px';panel.style.top=top+'px';
+}
+
+// ─── INDIVIDUAL DASHBOARD PANELS ─────────────────────────────────────────────
+function openIndivPanel(panelKey, e) {
   e.stopPropagation();
   closeAllPanels();
   const rect = e.currentTarget.getBoundingClientRect();
-  const w = WEEKS[currentIdx];
-  type === 'volume' ? openVolumePanel(panelId, key, w, rect) : openChartPanel(key, rect);
-}
+  const breakdown = window._closerBreakdown || [];
+  const setterBreakdown = window._setterBreakdown || [];
 
-const METRIC_DEFINITIONS = {
-  callsBooked: '<strong>Calls Booked</strong> — Total calls that occurred this week (col K, Leads Applied). Same universe as all other metrics. Paired with Setting Rate which measures future pipeline.',
-  qualShows: '<strong>Qualified Shows</strong> — Calls where the lead showed up (Showed or Follow Up) this week (col K). DQ excluded — they arrived but were disqualified during the call.',
-  newContracts: '<strong>New Contracts</strong> — Qualified shows that closed (col N = Yes), anchored to the week the call happened (col K). May increase slightly in following days if a follow-up closes.',
-  closeRate: '<strong>Close Rate</strong> — New Contracts ÷ Qualified Shows. Of all qualified shows this week, what percentage closed.',
-  showRate: '<strong>Net Show Rate</strong> — People who arrived ÷ (completed calls − cancellations). Cancellations excluded because leads cancel after seeing pricing in the pre-call homework. Showed + Follow Up + DQ all count as arrived.',
-  bookingRate: '<strong>Setting Rate</strong> — Leading indicator. Calls SET by Emery this week (col R, source = Emery) ÷ leads assigned to Emery this week (DM Index, col H = Emery). Blank col H = lead never interacted with ManyChat and is excluded.'
-};
+  let title, leads, stats;
 
-function addDefinition(panelId, key) {
-  const defEl = document.getElementById('def-' + panelId.replace('panel-', ''));
-  if (defEl && METRIC_DEFINITIONS[key]) {
-    defEl.innerHTML = `<span class="def-title">Definition</span>${METRIC_DEFINITIONS[key]}`;
+  if (panelKey === 'closer-calls') {
+    title = 'Calls Scheduled';
+    leads = breakdown.map(r => ({name:r.name, source:r.status, cls:statusClass(r.status)}));
+    const showed = breakdown.filter(r=>['Showed','Follow Up'].includes(r.status)).length;
+    const canc = breakdown.filter(r=>r.status==='Cancelled').length;
+    const noshow = breakdown.filter(r=>r.status==='No Show').length;
+    stats = [{n:showed,l:'Showed'},{n:canc,l:'Cancelled'},{n:noshow,l:'No Show'},{n:breakdown.length,l:'Total'}];
+  } else if (panelKey === 'closer-cancelled') {
+    title = 'Calls Cancelled';
+    const cancelled = breakdown.filter(r=>r.status==='Cancelled');
+    leads = cancelled.map(r => ({name:r.name, source:'Cancelled', cls:'src-cancelled'}));
+    stats = [{n:cancelled.length,l:'Cancelled'},{n:breakdown.length,l:'Of Total'}];
+  } else if (panelKey === 'closer-contracts') {
+    title = 'Contracts Closed';
+    const closed = breakdown.filter(r=>r.sale==='Yes');
+    leads = closed.map(r => ({name:r.name, source:r.product||'—', cls:'src-emery', extra:r.product}));
+    stats = [{n:closed.length,l:'Closed'}];
+  } else if (panelKey === 'setter-calls') {
+    title = 'Calls Set';
+    leads = setterBreakdown.map(r => ({name:r.name, source:r.status||'—', cls:statusClass(r.status)}));
+    stats = [{n:setterBreakdown.length,l:'Total Set'}];
+  } else if (panelKey === 'setter-cancelled') {
+    title = 'Calls Cancelled';
+    const cancelled = (setterBreakdown).filter(r=>r.status==='Cancelled');
+    leads = cancelled.map(r => ({name:r.name, source:'Cancelled', cls:'src-cancelled'}));
+    stats = [{n:cancelled.length,l:'Cancelled'}];
+  } else if (panelKey === 'setter-qualified') {
+    title = 'Qualified Shows';
+    const qual = setterBreakdown.filter(r=>r.qualified==='Yes');
+    leads = qual.map(r => ({name:r.name, source:'Qualified', cls:'src-deniz'}));
+    stats = [{n:qual.length,l:'Qualified'}];
   }
-}
+  if (!title) return;
 
-function openVolumePanel(panelId, key, w, rect) {
-  const panel = document.getElementById(panelId);
+  // Reuse panel-calls for indiv panels
+  const panel = document.getElementById('panel-calls');
+  panel.querySelector('.panel-title').textContent = title;
+  const listEl = document.getElementById('list-calls');
+  const sumEl = document.getElementById('summary-calls');
 
-  // Setting Rate panel — special case, no lead list
-  if (key === 'bookingRate') {
-    const sumEl = document.getElementById('summary-setting');
-    sumEl.innerHTML = [
-      {n: w.settingData.emeryCallsSet, l: 'Calls Set'},
-      {n: w.settingData.dmLeadsAssigned, l: 'Leads Assigned'},
-      {n: (w.settingData.dmLeadsAssigned > 0 ? (w.settingData.emeryCallsSet / w.settingData.dmLeadsAssigned * 100).toFixed(1) : '0.0') + '%', l: 'Setting Rate'}
-    ].map(s => `<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
-    addDefinition(panelId, key);
-    positionAndShow(panel, rect);
-    return;
-  }
+  listEl.innerHTML = (leads||[]).map(l =>
+    `<div class="lead-row"><span class="lead-name">${l.name}</span><span class="lead-source ${l.cls}">${l.source}</span></div>`
+  ).join('') || '<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
 
-  const suffix = panelId.replace('panel-', '');
-  const listEl = document.getElementById('list-' + suffix);
-  const sumEl  = document.getElementById('summary-' + suffix);
-
-  let leads, stats;
-  if (key === 'callsBooked') {
-    leads = w.callsList;
-    const e = leads.filter(l => l.source === 'Emery').length;
-    const d = leads.filter(l => l.source === 'Deniz').length;
-    const i = leads.length - e - d;
-    stats = [{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];
-    if (d > 0) stats.splice(1, 0, {n:d, l:'Deniz'});
-  } else if (key === 'qualShows') {
-    leads = w.showsList;
-    const e = leads.filter(l => l.source === 'Emery').length;
-    const i = leads.length - e;
-    stats = [{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];
-  } else {
-    leads = w.contractsList.map(l => ({name: l.name, source: l.closer, product: l.product}));
-    const d = w.contractsList.filter(l => l.closer === 'Deniz').length;
-    const j = w.contractsList.filter(l => l.closer === 'Dr. Joey').length;
-    stats = [{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];
-  }
-
-  listEl.innerHTML = leads.map(l => {
-    let lbl, cls;
-    if (key === 'newContracts') {
-      lbl = l.source === 'Dr. Joey' ? 'Joey' : l.source || '—';
-      cls = l.source === 'Dr. Joey' ? 'src-joey' : 'src-deniz';
-    } else {
-      const isEmery = l.source === 'Emery';
-      const isDeniz = l.source === 'Deniz';
-      lbl = isEmery ? 'Emery' : isDeniz ? 'Deniz' : 'Inbound';
-      cls = isEmery ? 'src-emery' : isDeniz ? 'src-deniz' : 'src-inbound';
-    }
-    const followUpTag = (key === 'qualShows' && l.status === 'Follow Up')
-      ? `<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`
-      : '';
-    const productTag = (key === 'newContracts' && l.product)
-      ? `<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`
-      : '';
-    return `<div class="lead-row"><span class="lead-name">${l.name}${followUpTag}${productTag}</span><span class="lead-source ${cls}">${lbl}</span></div>`;
-  }).join('') || '<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data for this week</div>';
-
-  sumEl.innerHTML = stats.map(s =>
+  sumEl.innerHTML = (stats||[]).map(s =>
     `<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`
   ).join('');
 
-  // Add definition section
-  const defEl = document.getElementById('def-' + suffix);
-  if (defEl && METRIC_DEFINITIONS[key]) {
-    defEl.innerHTML = `<span class="def-title">Definition</span>${METRIC_DEFINITIONS[key]}`;
-  }
-
+  document.getElementById('def-calls').innerHTML = '';
   positionAndShow(panel, rect);
 }
 
-function openChartPanel(key, rect) {
-  const panel = document.getElementById('panel-chart');
-  const titles = {closeRate:'Close Rate · Last 8 Weeks', showRate:'Show Rate · Last 8 Weeks', bookingRate:'Booking Rate · Last 8 Weeks'};
-  document.getElementById('panel-chart-title').textContent = titles[key];
-
-  const visible = WEEKS.slice(-8);
-  const labels = visible.map(w => w.label);
-  const vals = visible.map(w => key === 'bookingRate' ? parseFloat((w[key]*100).toFixed(1)) : Math.round(w[key]*100));
-  const thresh = {closeRate:35, showRate:80, bookingRate:2.5}[key];
-
-  // Add definition
-  const defChart = document.getElementById('def-chart');
-  if (defChart && METRIC_DEFINITIONS[key]) {
-    defChart.innerHTML = '<span class="def-title">Definition</span>' + METRIC_DEFINITIONS[key];
-  }
-
-  positionAndShow(panel, rect);
-
-  if (trendChart) { trendChart.destroy(); trendChart = null; }
-  setTimeout(() => {
-    trendChart = new Chart(document.getElementById('trendChart').getContext('2d'), {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { data: vals, borderColor: '#2278AC', backgroundColor: 'rgba(34,120,172,0.06)', fill: true, tension: 0.35,
-            pointRadius: 4, pointBackgroundColor: vals.map(v => v >= thresh ? '#1A9E5C' : '#C93A3A'),
-            pointBorderColor: '#fff', pointBorderWidth: 1.5 },
-          { data: labels.map(() => thresh), borderColor: 'rgba(8,13,26,0.12)', borderDash: [4,4], pointRadius: 0, fill: false }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false },
-          tooltip: { backgroundColor: '#080D1A', titleColor: 'rgba(255,255,255,0.5)', bodyColor: '#fff',
-            borderColor: 'rgba(34,120,172,0.3)', borderWidth: 1, padding: 10,
-            callbacks: { label: c => ` ${c.raw}%` } }},
-        scales: {
-          x: { ticks: { color: '#A0AEBF', font: { size: 10, family: "'DM Mono', monospace" } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-          y: { ticks: { color: '#A0AEBF', font: { size: 10, family: "'DM Mono', monospace" }, callback: v => v+'%' },
-               grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: false }
-        }
-      }
-    });
-  }, 50);
-}
-
-function positionAndShow(panel, rect) {
-  panel.classList.add('active');
-  document.getElementById('overlay').classList.add('active');
-  const pw = 340;
-  let left = rect.left + window.scrollX;
-  let top  = rect.bottom + window.scrollY + 10;
-  if (left + pw > window.innerWidth - 16) left = window.innerWidth - pw - 16;
-  if (top + 320 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 320 - 10;
-  panel.style.left = left + 'px';
-  panel.style.top  = top + 'px';
+function statusClass(s) {
+  if (!s) return 'src-inbound';
+  if (s === 'Showed' || s === 'Follow Up') return 'src-deniz';
+  if (s === 'Cancelled') return 'src-cancelled';
+  if (s === 'No Show') return 'src-joey';
+  if (s === 'Disqualified on sales call') return 'src-inbound';
+  return 'src-inbound';
 }
 
 function closeAllPanels() {
-  document.querySelectorAll('.floating-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.floating-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('overlay').classList.remove('active');
 }
 
-// ─── NAVIGATION ───────────────────────────────────────────────────────────────
-function changeWeek(d) {
-  const n = currentIdx + d;
-  if (n < 0 || n >= WEEKS.length) return;
-  currentIdx = n; closeAllPanels(); render();
+// ─── TAB / NAV ────────────────────────────────────────────────────────────────
+function switchTab(name,btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
 }
 
+function changeWeek(d) { const n=currentIdx+d; if(n<0||n>=WEEKS.length)return; currentIdx=n; closeAllPanels(); render(); }
 function jumpToWeek(idx) {
-  currentIdx = idx; closeAllPanels(); render();
+  currentIdx=idx;
+  const wk=WEEKS[idx];
+  if(wk) {
+    _pickerDates['sc-week'] = new Date(wk.ws);
+    const inp = document.getElementById('dinput-sc-week');
+    if(inp) inp.value = fmtDateAmerican(wk.ws);
+    const endEl = document.getElementById('sc-week-end-display');
+    if(endEl) endEl.textContent = fmtDateAmerican(wk.we);
+  }
+  closeAllPanels();
+  renderScorecard();
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+function initDashDefaults() {
+  const today=new Date(); today.setHours(0,0,0,0);
+  const lastWs=addDays(weekStart(today),-7);
+  const mo=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
+
+  // Set default dates for all pickers
+  _pickerDates['sc-week']     = new Date(lastWs);
+  _pickerDates['sc-day']      = new Date(today);
+  _pickerDates['closer-week'] = new Date(lastWs);
+  _pickerDates['closer-day']  = new Date(today);
+  _pickerDates['setter-week'] = new Date(lastWs);
+  _pickerDates['setter-day']  = new Date(today);
+
+  // Populate inputs and end displays
+  const weEnd = addDays(lastWs,6);
+  ['sc','closer','setter'].forEach(p => {
+    const wi = document.getElementById('dinput-'+p+'-week');
+    if (wi) wi.value = fmtDateAmerican(lastWs);
+    const di = document.getElementById('dinput-'+p+'-day');
+    if (di) di.value = fmtDateAmerican(today);
+    const endEl = document.getElementById(p+'-week-end-display');
+    if (endEl) endEl.textContent = fmtDateAmerican(weEnd);
+    const mi = document.getElementById(p+'-month');
+    if (mi) mi.value = mo;
+  });
+}
+
 async function init() {
   document.getElementById('loading-screen').classList.remove('hidden');
   document.getElementById('error-screen').classList.add('hidden');
-
   try {
-    document.getElementById('loading-text').textContent = 'Loading Leads Applied...';
-    leadsRaw = await fetchSheet(TAB_LEADS);
-
-    document.getElementById('loading-text').textContent = 'Loading DM Tracking Index...';
-    dmsRaw = await fetchSheet(TAB_DMS);
-
-    document.getElementById('loading-text').textContent = 'Calculating metrics...';
-    WEEKS = processData(leadsRaw, dmsRaw);
-
-    if (WEEKS.length === 0) throw new Error('No weekly data found in the sheet.');
-
-    // Default to current week, fallback to last
-    const todayWS = weekStartDate(new Date());
-    const todayKey = dateKey(todayWS);
-    const currentWeekIdx = WEEKS.findIndex(w => dateKey(w.ws) === todayKey);
-    currentIdx = currentWeekIdx >= 0 ? currentWeekIdx : WEEKS.length - 1;
-
-    const now = new Date();
-    document.getElementById('last-updated').textContent =
-      'Updated ' + now.toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'});
-
+    document.getElementById('loading-text').textContent='Loading Leads Applied...';
+    leadsRaw=await fetchSheet(TAB_LEADS);
+    document.getElementById('loading-text').textContent='Loading DM Tracking Index...';
+    dmsRaw=await fetchSheet(TAB_DMS);
+    document.getElementById('loading-text').textContent='Loading Client Mastersheet...';
+    clientRaw=await fetchSheet(TAB_CLIENT);
+    document.getElementById('loading-text').textContent='Calculating...';
+    WEEKS=buildWeeks();
+    if(!WEEKS.length)throw new Error('No weekly data found.');
+    const todayWS=weekStart(new Date());
+    const idx=WEEKS.findIndex(w=>sameDay(w.ws,todayWS));
+    currentIdx=idx>=0?idx:WEEKS.length-1;
+    document.getElementById('last-updated').textContent='Updated '+new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('loading-screen').classList.add('hidden');
-    render();
-
-  } catch (err) {
+    initDashDefaults();
+    renderScorecard();
+    renderCloserIndiv();
+    renderSetterIndiv();
+  } catch(err) {
     document.getElementById('loading-screen').classList.add('hidden');
     document.getElementById('error-screen').classList.remove('hidden');
-    document.getElementById('error-msg').textContent = err.message || 'Unknown error. Check your API key and sheet permissions.';
+    document.getElementById('error-msg').textContent=err.message||'Unknown error.';
   }
 }
 
