@@ -246,6 +246,42 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .cpk-day.cpk-today { color: var(--steel-600); font-weight: 700; }
 .date-display { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
 
+/* COLLAPSIBLE SECTIONS */
+.collapsible-section { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.collapsible-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; user-select: none; transition: background 0.15s; }
+.collapsible-header:hover { background: var(--surface-2); }
+.collapsible-header .section-label { margin: 0; }
+.collapsible-chevron { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--text-faint); transition: transform 0.25s ease; flex-shrink: 0; }
+.collapsible-chevron.open { transform: rotate(180deg); }
+.collapsible-body { display: none; border-top: 1px solid var(--border); }
+.collapsible-body.open { display: block; }
+
+/* WEEKLY TREND MINI-TABLE */
+.trend-strip { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.trend-strip-title { font-size: 10px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px; }
+.trend-weeks { display: flex; gap: 6px; flex-wrap: wrap; }
+.trend-week { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+.trend-week.current { background: #EEF6FD; border-color: var(--steel-400); }
+.trend-week-label { font-size: 9px; font-family: var(--mono); color: var(--text-faint); letter-spacing: 0.04em; text-transform: uppercase; }
+.trend-week-val { font-size: 13px; font-family: var(--mono); font-weight: 600; }
+.trend-week-val.green { color: var(--green); }
+.trend-week-val.red { color: var(--red); }
+.trend-week-val.gold { color: var(--gold); }
+.trend-week-val.neutral { color: var(--text-muted); }
+
+/* FORM REFLECTION SECTION */
+.form-section { padding: 0; }
+.form-qa { padding: 16px 20px; }
+.form-qa:not(:last-child) { border-bottom: 1px solid var(--border); }
+.form-q { font-size: 12px; font-weight: 600; color: var(--text-body); margin-bottom: 6px; line-height: 1.5; }
+.form-a { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.form-empty { padding: 24px 20px; text-align: center; color: var(--text-faint); font-size: 12px; font-style: italic; }
+
+/* FORM LINK IN CONTROLS BAR */
+.form-link { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--steel-600); background: var(--surface-2); border: 1px solid var(--border); text-decoration: none; transition: all 0.15s; letter-spacing: 0.04em; white-space: nowrap; margin-left: auto; }
+.form-link:hover { background: var(--steel-600); color: white; border-color: var(--steel-600); }
+.form-link svg { flex-shrink: 0; }
+
 #overlay { position: fixed; inset: 0; z-index: 490; display: none; }
 #overlay.active { display: block; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -410,6 +446,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         </div>
       </div>
     </div>
+    <a class="form-link" id="closer-form-link" href="https://forms.gle/8377t6FSwxLT6quK7" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Weekly Reflection
+    </a>
   </div>
   <main>
     <!-- Individual view -->
@@ -419,12 +459,40 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         <span class="section-meta" id="closer-indiv-period"></span>
       </div>
       <div id="closer-indiv-body"></div>
-      <div class="section-header" style="margin-top:1.5rem;"><span class="section-label">Performance Breakdown</span></div>
-      <div class="breakdown-wrap">
-        <table class="breakdown-table">
-          <thead><tr><th>Name</th><th>Call Date</th><th>Status</th><th>Sale</th><th>Product</th></tr></thead>
-          <tbody id="closer-breakdown"></tbody>
-        </table>
+      <!-- Form Reflection (collapsible, weekly only) -->
+      <div id="closer-form-section" style="display:none;margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Weekly Reflection</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body" id="closer-form-body"></div>
+        </div>
+      </div>
+      <!-- Historical Trend (collapsible, weekly only) -->
+      <div id="closer-trend-section" style="display:none;margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Historical Trend</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body" id="closer-trend-body"></div>
+        </div>
+      </div>
+      <!-- Performance Breakdown (collapsible) -->
+      <div style="margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Performance Breakdown</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body">
+            <table class="breakdown-table">
+              <thead><tr><th>Name</th><th>Call Date</th><th>Status</th><th>Sale</th><th>Product</th></tr></thead>
+              <tbody id="closer-breakdown"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Comparison view -->
@@ -485,6 +553,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         </div>
       </div>
     </div>
+    <a class="form-link" id="setter-form-link" href="https://forms.gle/z2tNtjDdXKmQ1iFR7" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Weekly Reflection
+    </a>
   </div>
   <main>
     <!-- Individual view -->
@@ -494,12 +566,40 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         <span class="section-meta" id="setter-indiv-period"></span>
       </div>
       <div id="setter-indiv-body"></div>
-      <div class="section-header" style="margin-top:1.5rem;"><span class="section-label">Performance Breakdown</span></div>
-      <div class="breakdown-wrap">
-        <table class="breakdown-table">
-          <thead><tr><th>Name</th><th>Set Date</th><th>Call Date</th><th>Status</th><th>Qualified</th></tr></thead>
-          <tbody id="setter-breakdown"></tbody>
-        </table>
+      <!-- Form Reflection (collapsible, weekly only) -->
+      <div id="setter-form-section" style="display:none;margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Weekly Reflection</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body" id="setter-form-body"></div>
+        </div>
+      </div>
+      <!-- Historical Trend (collapsible, weekly only) -->
+      <div id="setter-trend-section" style="display:none;margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Historical Trend</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body" id="setter-trend-body"></div>
+        </div>
+      </div>
+      <!-- Performance Breakdown (collapsible) -->
+      <div style="margin-top:1.5rem;">
+        <div class="collapsible-section">
+          <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <span class="section-label">Performance Breakdown</span>
+            <div class="collapsible-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="collapsible-body">
+            <table class="breakdown-table">
+              <thead><tr><th>Name</th><th>Set Date</th><th>Call Date</th><th>Status</th><th>Qualified</th></tr></thead>
+              <tbody id="setter-breakdown"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Comparison view -->
@@ -532,10 +632,31 @@ const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales
 const SHOWED    = new Set(['Showed','Follow Up','Disqualified on sales call']);
 const QUAL      = new Set(['Showed','Follow Up']);
 
+// ─── FORM REFLECTION CONFIG ──────────────────────────────────────────────────
+const CLOSER_FORM_SHEET = '1E-UUKbrqWrkXvvR4d_h_gqSNJqMkoHUGysRdjuc9gL0';
+const SETTER_FORM_SHEET = '1zG-l-dL6CC0iqQc0JMwvjPDm1LUDhSjRpQQnDhm2FN8';
+const FORM_TAB = 'Form Responses 1';
+
+const CLOSER_FORM_QUESTIONS = [
+  'Close Rate this week — ahead, on pace, or behind?',
+  'Other metrics in red? What caused it?',
+  'Objections or patterns on calls?',
+  'What did you do well + where could you improve?',
+  'One commitment for next week?'
+];
+const SETTER_FORM_QUESTIONS = [
+  'Qualified Shows MTD vs goal — ahead, on pace, or behind?',
+  'Other metrics in red? What caused it?',
+  'Biggest positive action/habit this week?',
+  'One thing you could have done better?',
+  'One commitment for next week?'
+];
+
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let WEEKS = [], currentIdx = 0, trendChart = null;
 let scDateMode = 'week'; // scorecard date mode: 'week' | 'month' | 'day'
 let leadsRaw = [], dmsRaw = [], clientRaw = [];
+let closerFormRaw = [], setterFormRaw = [];
 let closerDateMode = 'week', setterDateMode = 'week';
 // Toggle state: 'pct' or 'num'
 let closerToggle = {cancelled:'num', netShow:'pct', closeRate:'pct'};
@@ -572,6 +693,16 @@ async function fetchSheet(tab) {
   if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
   const data=await res.json();
   return (data.values||[]).slice(1);
+}
+
+async function fetchExternalSheet(sheetId, tab) {
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}?key=${API_KEY}`;
+  try {
+    const res=await fetch(url);
+    if(!res.ok) return [];
+    const data=await res.json();
+    return (data.values||[]).slice(1);
+  } catch(e) { console.warn('Form sheet fetch failed:', e); return []; }
 }
 
 // ─── CORE CALCULATIONS ────────────────────────────────────────────────────────
@@ -1185,6 +1316,10 @@ function renderCloserIndiv() {
     const saleTag=r.sale==='Yes'?`<span class="status-pill status-closed">Closed</span>`:'—';
     return `<tr><td>${r.name}</td><td>${fmtDateAmerican(r.callDate)}</td><td>${statusPill(r.status)}</td><td>${saleTag}</td><td style="color:var(--text-muted)">${r.product||'—'}</td></tr>`;
   }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:20px;">No data for this period</td></tr>';
+
+  // Render form reflection and trend (weekly only)
+  renderFormSection('closer', closerFormRaw, CLOSER_FORM_QUESTIONS, displayName, range);
+  renderCloserTrend(name, range);
 }
 
 function renderSetterIndiv() {
@@ -1257,6 +1392,10 @@ function renderSetterIndiv() {
   document.getElementById('setter-breakdown').innerHTML=d.breakdown.map(r=>{
     return `<tr><td>${r.name}</td><td>${fmtDateAmerican(r.setDate)}</td><td>${fmtDateAmerican(r.callDate)||'—'}</td><td>${statusPill(r.status)}</td><td style="color:${r.qualified==='Yes'?'var(--green)':'var(--text-faint)'}">${r.qualified}</td></tr>`;
   }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:20px;">No data for this period</td></tr>';
+
+  // Render form reflection and trend (weekly only)
+  renderFormSection('setter', setterFormRaw, SETTER_FORM_QUESTIONS, name, range);
+  renderSetterTrend(name, range);
 }
 
 // ─── COMPARISON DASHBOARDS ────────────────────────────────────────────────────
@@ -1643,6 +1782,9 @@ async function init() {
     dmsRaw=await fetchSheet(TAB_DMS);
     document.getElementById('loading-text').textContent='Loading Client Mastersheet...';
     clientRaw=await fetchSheet(TAB_CLIENT);
+    document.getElementById('loading-text').textContent='Loading Reflections...';
+    closerFormRaw=await fetchExternalSheet(CLOSER_FORM_SHEET, FORM_TAB);
+    setterFormRaw=await fetchExternalSheet(SETTER_FORM_SHEET, FORM_TAB);
     document.getElementById('loading-text').textContent='Calculating...';
     WEEKS=buildWeeks();
     if(!WEEKS.length)throw new Error('No weekly data found.');
@@ -1660,6 +1802,147 @@ async function init() {
     document.getElementById('error-screen').classList.remove('hidden');
     document.getElementById('error-msg').textContent=err.message||'Unknown error.';
   }
+}
+
+// ─── COLLAPSIBLE TOGGLE ──────────────────────────────────────────────────────
+function toggleCollapsible(headerEl) {
+  const body = headerEl.nextElementSibling;
+  const chevron = headerEl.querySelector('.collapsible-chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+// ─── WEEKLY TREND RENDERING ──────────────────────────────────────────────────
+function renderCloserTrend(name, currentRange) {
+  const section = document.getElementById('closer-trend-section');
+  if (closerDateMode !== 'week') { section.style.display='none'; return; }
+  section.style.display='block';
+
+  const currentWs = currentRange.start;
+  // Get up to 6 previous weeks + current = 7 total
+  const weeks = [];
+  for (let i=6; i>=0; i--) {
+    const ws = addDays(currentWs, -7*i);
+    const we = addDays(ws, 6); we.setHours(23,59,59,999);
+    const d = calcRange(ws, we, name, 'closer');
+    const isCurrent = i===0;
+    const weekNum = Math.ceil((ws - new Date(ws.getFullYear(),0,1))/(7*24*3600*1000));
+    weeks.push({ ws, label: 'W'+String(weekNum).padStart(2,'0'), isCurrent, d });
+  }
+
+  const metrics = [
+    { name:'Calls', key:'calls', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'Net Show', key:'netSR', fmt:pct, catFn:v=>v>=0.80?'green':'red' },
+    { name:'Close Rate', key:'closeRate', fmt:pct, catFn:v=>v>=0.40?'gold':v>=0.30?'green':'red' },
+    { name:'Avg Cash', key:'avgCash', fmt:dollar, catFn:v=>v>0?'green':'neutral' },
+  ];
+
+  let html = '<div style="padding:20px;display:flex;flex-direction:column;gap:16px;">';
+  metrics.forEach(m => {
+    html += `<div><div class="trend-strip-title">${m.name}</div><div class="trend-weeks">`;
+    weeks.forEach(w => {
+      const val = w.d[m.key];
+      const c = m.catFn(val);
+      html += `<div class="trend-week${w.isCurrent?' current':''}">
+        <span class="trend-week-label">${w.label}</span>
+        <span class="trend-week-val ${c}">${m.fmt(val)}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('closer-trend-body').innerHTML = html;
+}
+
+function renderSetterTrend(name, currentRange) {
+  const section = document.getElementById('setter-trend-section');
+  if (setterDateMode !== 'week') { section.style.display='none'; return; }
+  section.style.display='block';
+
+  const currentWs = currentRange.start;
+  const weeks = [];
+  for (let i=6; i>=0; i--) {
+    const ws = addDays(currentWs, -7*i);
+    const we = addDays(ws, 6); we.setHours(23,59,59,999);
+    const d = calcRange(ws, we, name, 'setter');
+    const isCurrent = i===0;
+    const weekNum = Math.ceil((ws - new Date(ws.getFullYear(),0,1))/(7*24*3600*1000));
+    weeks.push({ ws, label: 'W'+String(weekNum).padStart(2,'0'), isCurrent, d });
+  }
+
+  const metrics = [
+    { name:'Leads Received', key:'dmLeads', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'Setting Rate', key:'settingRate', fmt:pct1, catFn:v=>cat('settingRate',v) },
+    { name:'Calls Set', key:'callsSet', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'Net Show Rate', key:'netSR', fmt:pct, catFn:v=>v>=0.80?'green':'red' },
+  ];
+
+  let html = '<div style="padding:20px;display:flex;flex-direction:column;gap:16px;">';
+  metrics.forEach(m => {
+    html += `<div><div class="trend-strip-title">${m.name}</div><div class="trend-weeks">`;
+    weeks.forEach(w => {
+      const val = w.d[m.key];
+      const c = m.catFn(val);
+      html += `<div class="trend-week${w.isCurrent?' current':''}">
+        <span class="trend-week-label">${w.label}</span>
+        <span class="trend-week-val ${c}">${m.fmt(val)}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('setter-trend-body').innerHTML = html;
+}
+
+// ─── FORM REFLECTION RENDERING ───────────────────────────────────────────────
+function findFormResponse(formRaw, personName, weekStartDate) {
+  // formRaw columns: 0=Timestamp, 1=Name, 2..N=answers
+  // Match by name and timestamp falling within the week (Fri-Thu)
+  // With 1 day buffer: timestamp on Friday AM still counts for previous week
+  const ws = new Date(weekStartDate); ws.setHours(0,0,0,0);
+  const we = addDays(ws, 7); we.setHours(23,59,59,999); // 1 day buffer past Thu
+
+  for (let i = formRaw.length-1; i>=0; i--) {
+    const row = formRaw[i];
+    const ts = parseDate(row[0]);
+    const name = (row[1]||'').trim();
+    if (!ts || !name) continue;
+    // Name matching: check if form name contains person name or vice versa
+    const nameMatch = name.toLowerCase().includes(personName.toLowerCase()) ||
+                      personName.toLowerCase().includes(name.toLowerCase());
+    if (nameMatch && ts >= ws && ts <= we) {
+      return row;
+    }
+  }
+  return null;
+}
+
+function renderFormSection(prefix, formRaw, questions, personName, range) {
+  const section = document.getElementById(prefix+'-form-section');
+  const body = document.getElementById(prefix+'-form-body');
+  const dateMode = prefix==='closer' ? closerDateMode : setterDateMode;
+
+  if (dateMode !== 'week') { section.style.display='none'; return; }
+  section.style.display='block';
+
+  const response = findFormResponse(formRaw, personName, range.start);
+
+  if (!response) {
+    body.innerHTML = '<div class="form-empty">No reflection submitted for this week.</div>';
+    return;
+  }
+
+  // Answers start at column index 2
+  let html = '<div class="form-section">';
+  questions.forEach((q, i) => {
+    const answer = (response[i+2]||'').trim();
+    html += `<div class="form-qa">
+      <div class="form-q">${q}</div>
+      <div class="form-a">${answer || '<em style="color:var(--text-faint);">No answer</em>'}</div>
+    </div>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
 }
 
 init();
