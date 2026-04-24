@@ -376,11 +376,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
       <button class="dash-mode-btn active" id="closer-mode-indiv" onclick="setDashMode('closer','individual',this)">Individual</button>
       <button class="dash-mode-btn" id="closer-mode-comp" onclick="setDashMode('closer','comparison',this)">Comparison</button>
     </div>
-    <div id="closer-indiv-controls" style="display:flex;align-items:center;gap:16px;">
+    <!-- Person selector: only visible in Individual mode -->
+    <div id="closer-person-controls" style="display:flex;align-items:center;gap:8px;">
       <select class="person-select" id="closer-person" onchange="renderCloserIndiv()">
         <option value="Deniz">Deniz</option>
         <option value="Dr. Joey">Joey</option>
       </select>
+    </div>
+    <!-- Date controls: always visible -->
+    <div style="display:flex;align-items:center;gap:12px;">
       <div class="date-mode-group">
         <button class="date-mode-btn active" onclick="setCloserDateMode('week',this)">Week</button>
         <button class="date-mode-btn" onclick="setCloserDateMode('month',this)">Month</button>
@@ -396,7 +400,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         <span class="date-display" id="closer-week-end-display">—</span>
       </div>
       <div id="closer-month-inputs" style="display:none;align-items:center;gap:8px;">
-        <input type="month" class="date-input" id="closer-month" onchange="renderCloserIndiv()">
+        <input type="month" class="date-input" id="closer-month" onchange="onCloserMonthChange()">
       </div>
       <div id="closer-day-inputs" style="display:none;align-items:center;gap:8px;">
         <div class="dpicker-wrap" id="dpicker-closer-day">
@@ -427,9 +431,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
     <div id="closer-view-comparison" class="dash-view-content">
       <div class="section-header">
         <span class="section-label">Closer — Comparison</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="section-meta" id="closer-comp-period"></span>
-        </div>
+        <span class="section-meta" id="closer-comp-period"></span>
       </div>
       <div class="role-card">
         <div class="role-card-header"><span class="role-title">Closer</span><span class="role-hint" id="closer-comp-hint">weekly</span></div>
@@ -449,11 +451,15 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
       <button class="dash-mode-btn active" id="setter-mode-indiv" onclick="setDashMode('setter','individual',this)">Individual</button>
       <button class="dash-mode-btn" id="setter-mode-comp" onclick="setDashMode('setter','comparison',this)">Comparison</button>
     </div>
-    <div id="setter-indiv-controls" style="display:flex;align-items:center;gap:16px;">
+    <!-- Person selector: only visible in Individual mode -->
+    <div id="setter-person-controls" style="display:flex;align-items:center;gap:8px;">
       <select class="person-select" id="setter-person" onchange="renderSetterIndiv()">
         <option value="Emery">Emery</option>
         <option value="Deniz">Deniz</option>
       </select>
+    </div>
+    <!-- Date controls: always visible -->
+    <div style="display:flex;align-items:center;gap:12px;">
       <div class="date-mode-group">
         <button class="date-mode-btn active" onclick="setSetterDateMode('week',this)">Week</button>
         <button class="date-mode-btn" onclick="setSetterDateMode('month',this)">Month</button>
@@ -469,7 +475,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         <span class="date-display" id="setter-week-end-display">—</span>
       </div>
       <div id="setter-month-inputs" style="display:none;align-items:center;gap:8px;">
-        <input type="month" class="date-input" id="setter-month" onchange="renderSetterIndiv()">
+        <input type="month" class="date-input" id="setter-month" onchange="onSetterMonthChange()">
       </div>
       <div id="setter-day-inputs" style="display:none;align-items:center;gap:8px;">
         <div class="dpicker-wrap" id="dpicker-setter-day">
@@ -518,9 +524,9 @@ const TAB_LEADS  = 'Leads applied';
 const TAB_DMS    = 'DM TRACKING INDEX';
 const TAB_CLIENT = 'Client Mastersheet';
 
-const L = { firstName:0,lastName:1,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
+const L = { firstName:0,lastName:1,email:2,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
 const D = { newLeadTS:4, setter:7 };
-const C = { datePurchased:5, salesPerson:12, cashCollected:25 };
+const C = { email:2, datePurchased:5, salesPerson:12, refund:24, cashCollected:25 };  // col C=email, col Y=refund, col Z=cashCollected
 
 const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales call','Follow Up']);
 const SHOWED    = new Set(['Showed','Follow Up','Disqualified on sales call']);
@@ -609,7 +615,23 @@ function calcWeek(ws) {
     const nd=comp.length-canc.length;
     const sheetCloserName = name === 'Dr. Joey' ? 'Joey' : name;
     const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we)&&(r[C.salesPerson]||'').trim()===sheetCloserName; });
-    const cashVals=closerClients.map(r=>parseFloat((r[C.cashCollected]||'').replace(/[$,]/g,''))).filter(v=>!isNaN(v)&&v>0);
+    // Build email+name lookup for accurate cash matching
+    const ccByEmail={}, ccByName={};
+    closerClients.forEach(cr=>{
+      const em=(cr[C.email]||'').trim().toLowerCase();
+      const nm=[(cr[0]||'').trim(),(cr[1]||'').trim()].filter(Boolean).join(' ').toLowerCase();
+      const cash=parseFloat((cr[C.cashCollected]||'').replace(/[$,]/g,''))||0;
+      const refund=String(cr[C.refund]||'').trim().toUpperCase()==='TRUE';
+      if(em) ccByEmail[em]={cash,refund};
+      if(nm) ccByName[nm]={cash,refund};
+    });
+    // Match each closer's qualified contracts to cash via email then name
+    const cashVals=ct.map(r=>{
+      const em=(r[L.email]||'').trim().toLowerCase();
+      const nm=[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ').toLowerCase();
+      const m=(em&&ccByEmail[em])||ccByName[nm]||{cash:0,refund:false};
+      return m.refund?0:m.cash;
+    }).filter(v=>v>0);
     return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash:cashVals.length>0?cashVals.reduce((a,b)=>a+b,0)/cashVals.length:0, showed:sh.length, contracts:ct.length, qual:q.length };
   }
 
@@ -658,7 +680,7 @@ function calcRange(start, end, name, type) {
       callsList, showsList, contractsList,
       settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM} };
   } else if (type==='closer') {
-    const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name; });
+    const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); const st=(r[L.callStatus]||'').trim(); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name&&st!=='Confirmed'; });
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
@@ -668,22 +690,70 @@ function calcRange(start, end, name, type) {
     // Client Mastersheet uses 'Joey' not 'Dr. Joey'
     const sheetName = name === 'Dr. Joey' ? 'Joey' : name;
     const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e)&&(r[C.salesPerson]||'').trim()===sheetName; });
-    const cashVals=closerClients.map(r=>parseFloat((r[C.cashCollected]||'').replace(/[$,]/g,''))).filter(v=>!isNaN(v)&&v>0);
+    const ccByEmail2={}, ccByName2={};
+    closerClients.forEach(cr=>{
+      const em=(cr[C.email]||'').trim().toLowerCase();
+      const nm=[(cr[0]||'').trim(),(cr[1]||'').trim()].filter(Boolean).join(' ').toLowerCase();
+      const cash=parseFloat((cr[C.cashCollected]||'').replace(/[$,]/g,''))||0;
+      const refund=String(cr[C.refund]||'').trim().toUpperCase()==='TRUE';
+      if(em) ccByEmail2[em]={cash,refund};
+      if(nm) ccByName2[nm]={cash,refund};
+    });
+    const closerCashItems=ct.map(r=>{
+      const em=(r[L.email]||'').trim().toLowerCase();
+      const nm=[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ').toLowerCase();
+      return (em&&ccByEmail2[em])||ccByName2[nm]||{cash:0,refund:false};
+    });
+    const cashVals=closerCashItems.filter(v=>v.cash>0&&!v.refund).map(v=>v.cash);
     const avgCash=cashVals.length>0?cashVals.reduce((a,b)=>a+b,0)/cashVals.length:0;
-    const breakdown=cc.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),sale:(r[L.endInSale]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+    // Build cash lookup from Client Mastersheet — match by email (primary) then name (fallback)
+    const sheetCloserName2 = name==='Dr. Joey'?'Joey':name;
+    const clientsInRange = clientRaw.filter(cr => {
+      const d = parseDate(cr[C.datePurchased]);
+      return d && inRange(d,s,e) && (cr[C.salesPerson]||'').trim()===sheetCloserName2;
+    });
+    // Build lookup maps
+    const cashByEmail = {}, cashByName = {};
+    clientsInRange.forEach(cr => {
+      const email = (cr[C.email]||'').trim().toLowerCase();
+      const name2 = [(cr[0]||'').trim(),(cr[1]||'').trim()].filter(Boolean).join(' ').toLowerCase();
+      const entry = {
+        cash: parseFloat((cr[C.cashCollected]||'').replace(/[$,]/g,''))||0,
+        refund: String(cr[C.refund]||'').trim().toUpperCase()==='TRUE'
+      };
+      if (email) cashByEmail[email] = entry;
+      if (name2) cashByName[name2] = entry;
+    });
+    const breakdown=cc.map(r=>{
+      const clientName = [(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—';
+      const clientEmail = (r[L.email]||'').trim().toLowerCase();
+      // Try email first, then name
+      const match = (clientEmail && cashByEmail[clientEmail]) || cashByName[clientName.toLowerCase()] || {cash:0, refund:false};
+      return {
+        name: clientName,
+        callDate: r[L.salesCallBookedDate]||'',
+        status: (r[L.callStatus]||'').trim(),
+        sale: (r[L.endInSale]||'').trim(),
+        product: (r[L.productPurchased]||'').trim(),
+        cashCollected: match.cash,
+        refund: match.refund
+      };
+    });
     return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash, showed:sh.length, contracts:ct.length, qual:q.length, breakdown };
   } else {
     const dmLeads=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
     const setLeads=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
+    // Use happened (col K) for show/qual stats, setLeads for cancelled + breakdown (same universe)
     const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
     const comp=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const sh=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const q=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-    const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
-    const nd=comp.length-canc.length;
+    const nd=comp.length-comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled').length;
+    // Cancelled: among calls SET in this period, how many have Cancelled status
+    const cancSet=setLeads.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const qualMTD=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,e)&&(r[L.source]||'').trim()===name&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
     const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
-    return { dmLeads:dmLeads.length, callsSet:setLeads.length, settingRate:dmLeads.length>0?setLeads.length/dmLeads.length:0, cancelled:canc.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, breakdown };
+    return { dmLeads:dmLeads.length, callsSet:setLeads.length, settingRate:dmLeads.length>0?setLeads.length/dmLeads.length:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, breakdown };
   }
 }
 
@@ -963,9 +1033,14 @@ function pickDate(key, dk) {
     if (endEl) endEl.textContent = fmtDateAmerican(addDays(_pickerDates[key],6));
   }
   closePicker(key);
-  if (prefix === 'closer') renderCloserIndiv();
-  else if (prefix === 'setter') renderSetterIndiv();
-  else if (prefix === 'sc') renderScorecard();
+  if (prefix === 'sc') renderScorecard();
+  else if (prefix === 'closer') {
+    if (document.getElementById('closer-view-comparison').classList.contains('active')) renderCloserComp();
+    else renderCloserIndiv();
+  } else if (prefix === 'setter') {
+    if (document.getElementById('setter-view-comparison').classList.contains('active')) renderSetterComp();
+    else renderSetterIndiv();
+  }
 }
 
 function onDateInput(key, val) {
@@ -979,9 +1054,14 @@ function onDateInput(key, val) {
       const endEl = document.getElementById(prefix+'-week-end-display');
       if (endEl) endEl.textContent = fmtDateAmerican(addDays(d,6));
     }
-    if (prefix === 'closer') renderCloserIndiv();
-    else if (prefix === 'setter') renderSetterIndiv();
-    else if (prefix === 'sc') renderScorecard();
+    if (prefix === 'sc') renderScorecard();
+    else if (prefix === 'closer') {
+      if (document.getElementById('closer-view-comparison').classList.contains('active')) renderCloserComp();
+      else renderCloserIndiv();
+    } else if (prefix === 'setter') {
+      if (document.getElementById('setter-view-comparison').classList.contains('active')) renderSetterComp();
+      else renderSetterIndiv();
+    }
   }
 }
 
@@ -1017,7 +1097,7 @@ function toggleBtn(id,current,pctLabel,numLabel,onclick) {
   return `<button class="toggle-btn" onclick="${onclick}">${showPct?numLabel:pctLabel}</button>`;
 }
 
-function makeIndivCard(label, thresh, c, displayVal, toggleBtn, clickFn) {
+function makeIndivCard(label, thresh, c, displayVal, toggleBtn, clickFn, def) {
   const onclick = clickFn ? `onclick="${clickFn}"` : '';
   const cursor = clickFn ? 'cursor:pointer;' : 'cursor:default;';
   return `<div class="metric-card ${c}" style="${cursor}" ${onclick}>
@@ -1027,6 +1107,7 @@ function makeIndivCard(label, thresh, c, displayVal, toggleBtn, clickFn) {
     </div>
     <div class="metric-value">${displayVal}</div>
     ${thresh ? `<div class="metric-threshold">${thresh}</div>` : ''}
+    ${def ? `<div class="metric-threshold" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text-faint);line-height:1.5;">${def}</div>` : ''}
     ${clickFn ? `<div class="metric-hint"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H5M10 2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Click · view breakdown</div>` : ''}
   </div>`;
 }
@@ -1059,9 +1140,10 @@ function renderCloserIndiv() {
 
   const cards = [
     makeIndivCard(
-      'Calls Scheduled', 'Total calls in period',
+      'Calls Booked', 'Total calls in period',
       'neutral', d.calls, null,
-      `openIndivPanel('closer-calls', event)`
+      `openIndivPanel('closer-calls', event)`,
+      'Calls that occurred with this closer (col K, status ≠ Confirmed).'
     ),
     makeIndivCard(
       'Calls Cancelled',
@@ -1069,25 +1151,30 @@ function renderCloserIndiv() {
       'neutral',
       cCancelMode==='num' ? cancelNum : cancelPctStr,
       `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.cancelled='${cCancelMode==='num'?'pct':'num'}';renderCloserIndiv()">${cCancelMode==='num'?`% ${cancelPctStr}`:`# ${cancelNum}`}</button>`,
-      `openIndivPanel('closer-cancelled', event)`
+      `openIndivPanel('closer-cancelled', event)`,
+      'Calls where lead cancelled after being scheduled.'
     ),
     makeIndivCard(
       'Net Show Rate', 'Red < 80%  ·  Green 80%+',
       d.netSR>=0.80?'green':'red',
       cNetMode==='pct' ? netSRPctStr : netSRNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.netShow='${cNetMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
-      null
+      `openIndivPanel('closer-shows', event)`,
+      'Showed ÷ (completed − cancelled). Cancellations excluded from denominator.'
     ),
     makeIndivCard(
       'Close Rate', 'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
       d.closeRate>=0.40?'gold':d.closeRate>=0.30?'green':'red',
       cCloseMode==='pct' ? closeRatePctStr : closeRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.closeRate='${cCloseMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cCloseMode==='pct'?`# ${closeRateNum}`:`% ${closeRatePctStr}`}</button>`,
-      `openIndivPanel('closer-contracts', event)`
+      `openIndivPanel('closer-contracts', event)`,
+      'New contracts ÷ qualified shows. Does not count refunds against close rate.'
     ),
     makeIndivCard(
       'Avg Cash Collected', 'Per contract closed',
-      d.avgCash>0?'green':'neutral', dollar(d.avgCash), null, null
+      d.avgCash>0?'green':'neutral', dollar(d.avgCash), null,
+      `openIndivPanel('closer-cash', event)`,
+      'Average cash collected per closed contract. Refunds excluded from calculation.'
     ),
   ];
 
@@ -1128,14 +1215,16 @@ function renderSetterIndiv() {
   const cards = [
     makeIndivCard(
       'Leads Received', 'Assigned in period',
-      'neutral', d.dmLeads, null, null
+      'neutral', d.dmLeads, null, null,
+      'Total leads assigned to this setter in the DM Index (col H) for this period.'
     ),
     makeIndivCard(
       'Setting Rate', 'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
       cat('settingRate', d.settingRate),
       sRateMode==='pct' ? sRatePctStr : sRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.settingRate='${sRateMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sRateMode==='pct'?`# ${sRateNum}`:`% ${sRatePctStr}`}</button>`,
-      `openIndivPanel('setter-calls', event)`
+      `openIndivPanel('setter-calls', event)`,
+      'Calls SET (col R) ÷ leads assigned (DM Index). Leading indicator.'
     ),
     makeIndivCard(
       'Calls Cancelled',
@@ -1143,19 +1232,22 @@ function renderSetterIndiv() {
       'neutral',
       sCancelMode==='num' ? cancelNum : cancelPctStr,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.cancelled='${sCancelMode==='num'?'pct':'num'}';renderSetterIndiv()">${sCancelMode==='num'?`% ${cancelPctStr}`:`# ${cancelNum}`}</button>`,
-      `openIndivPanel('setter-cancelled', event)`
+      `openIndivPanel('setter-cancelled', event)`,
+      'Of the calls SET in this period, how many were later cancelled.'
     ),
     makeIndivCard(
       'Net Show Rate', 'Red < 80%  ·  Green 80%+',
       d.netSR>=0.80?'green':'red',
       sNetMode==='pct' ? netSRPctStr : netSRNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.netShow='${sNetMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
-      null
+      null,
+      'Showed ÷ (completed − cancelled) for calls from this setter.'
     ),
     makeIndivCard(
       'Qualified Shows MTD', `Target: ${target} / month`,
       'neutral', d.qualMTD, null,
-      `openIndivPanel('setter-qualified', event)`
+      `openIndivPanel('setter-qualified', event)`,
+      'Calls from this setter that resulted in Showed or Follow Up — month to date.'
     ),
   ];
 
@@ -1185,25 +1277,30 @@ function compCell(val, fmt, c, ctxNote) {
 }
 
 function renderCloserComp() {
-  const wk=WEEKS[currentIdx];
-  const w=calcWeek(wk.ws);
-  document.getElementById('closer-comp-period').textContent=`${fmtShort(wk.ws)} – ${fmtShort(wk.we)}`;
+  const range = getDashRange('closer', closerDateMode);
+  if (!range || !leadsRaw.length) return;
+  document.getElementById('closer-comp-period').textContent = range.label;
+
+  // Calculate stats for both closers over the selected range
+  const denizData = calcRange(range.start, range.end, 'Deniz', 'closer');
+  const joeyData  = calcRange(range.start, range.end, 'Dr. Joey', 'closer');
+
   const rows=[
-    {label:'Calls Scheduled',sub:'Total calls in period',
-      deniz:{v:w.closer.deniz.calls,fmt:v=>v,c:'neutral'},
-      joey:{v:w.closer.joey.calls,fmt:v=>v,ctx:'context'}},
-    {label:'Calls Cancelled',sub:'Number cancelled',
-      deniz:{v:w.closer.deniz.cancelled,fmt:v=>v,c:'neutral'},
-      joey:{v:w.closer.joey.cancelled,fmt:v=>v,ctx:'context'}},
-    {label:'Net Show Rate',sub:'Red < 80%  ·  Green 80%+',
-      deniz:{v:w.closer.deniz.netSR,fmt:pct,c:w.closer.deniz.netSR>=0.80?'green':'red'},
-      joey:{v:w.closer.joey.netSR,fmt:pct,ctx:'context'}},
-    {label:'Close Rate',sub:'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
-      deniz:{v:w.closer.deniz.closeRate,fmt:pct,c:w.closer.deniz.closeRate>=0.40?'gold':w.closer.deniz.closeRate>=0.30?'green':'red'},
-      joey:{v:w.closer.joey.closeRate,fmt:pct,ctx:'context'}},
-    {label:'Avg Cash Collected',sub:'Per contract closed',
-      deniz:{v:w.closer.deniz.avgCash,fmt:dollar,c:w.closer.deniz.avgCash>0?'green':'neutral'},
-      joey:{v:w.closer.joey.avgCash,fmt:dollar,ctx:'context'}},
+    {label:'Calls Booked', sub:'Total calls in period',
+      deniz:{v:denizData.calls,   fmt:v=>v, c:'neutral'},
+      joey: {v:joeyData.calls,    fmt:v=>v}},
+    {label:'Calls Cancelled', sub:'Number cancelled',
+      deniz:{v:denizData.cancelled,  fmt:v=>v, c:'neutral'},
+      joey: {v:joeyData.cancelled,   fmt:v=>v}},
+    {label:'Net Show Rate', sub:'Red < 80%  ·  Green 80%+',
+      deniz:{v:denizData.netSR,   fmt:pct, c:denizData.netSR>=0.80?'green':'red'},
+      joey: {v:joeyData.netSR,    fmt:pct}},
+    {label:'Close Rate', sub:'Red < 30%  ·  Green 30%+  ·  Amazing 40%+',
+      deniz:{v:denizData.closeRate, fmt:pct, c:denizData.closeRate>=0.40?'gold':denizData.closeRate>=0.30?'green':'red'},
+      joey: {v:joeyData.closeRate,  fmt:pct}},
+    {label:'Avg Cash Collected', sub:'Per contract closed',
+      deniz:{v:denizData.avgCash,  fmt:dollar, c:denizData.avgCash>0?'green':'neutral'},
+      joey: {v:joeyData.avgCash,   fmt:dollar}},
   ];
   document.getElementById('closer-comp-body').innerHTML=rows.map(r=>`<tr>
     <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
@@ -1213,24 +1310,28 @@ function renderCloserComp() {
 }
 
 function renderSetterComp() {
-  const wk=WEEKS[currentIdx];
-  const w=calcWeek(wk.ws);
-  document.getElementById('setter-comp-period').textContent=`${fmtShort(wk.ws)} – ${fmtShort(wk.we)}`;
+  const range = getDashRange('setter', setterDateMode);
+  if (!range || !leadsRaw.length) return;
+  document.getElementById('setter-comp-period').textContent = range.label;
 
-  const daysInMonth=new Date(wk.we.getFullYear(),wk.we.getMonth()+1,0).getDate();
-  const dayOfMonth=Math.min(wk.we.getDate(),daysInMonth);
+  const emeryData = calcRange(range.start, range.end, 'Emery', 'setter');
+  const denizData = calcRange(range.start, range.end, 'Deniz', 'setter');
+
+  const endDate = range.end;
+  const daysInMonth=new Date(endDate.getFullYear(),endDate.getMonth()+1,0).getDate();
+  const dayOfMonth=Math.min(endDate.getDate(),daysInMonth);
   function paceCat(actual,target){ const exp=(target/daysInMonth)*dayOfMonth; if(actual>=exp*1.10)return'gold'; if(actual>=exp*0.90)return'green'; return'red'; }
 
   const rows=[
-    {label:'Setting Rate',sub:'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
-      emery:{v:w.setter.emery.rate,fmt:pct1,c:cat('settingRate',w.setter.emery.rate)},
-      deniz:{v:w.setter.deniz.rate,fmt:pct1,c:cat('settingRate',w.setter.deniz.rate)}},
-    {label:'Calls Set',sub:'Total in period',
-      emery:{v:w.setter.emery.callsSet,fmt:v=>v,c:'neutral'},
-      deniz:{v:w.setter.deniz.callsSet,fmt:v=>v,c:'neutral'}},
-    {label:'Qual. Shows MTD',sub:'Target: Emery 30 · Deniz 10',
-      emery:{v:w.setter.emery.qualMTD,fmt:v=>v+' / 30',c:paceCat(w.setter.emery.qualMTD,30)},
-      deniz:{v:w.setter.deniz.qualMTD,fmt:v=>v+' / 10',c:paceCat(w.setter.deniz.qualMTD,10)}},
+    {label:'Setting Rate', sub:'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
+      emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)},
+      deniz:{v:denizData.settingRate, fmt:pct1, c:cat('settingRate',denizData.settingRate)}},
+    {label:'Calls Set', sub:'Total in period',
+      emery:{v:emeryData.callsSet, fmt:v=>v, c:'neutral'},
+      deniz:{v:denizData.callsSet, fmt:v=>v, c:'neutral'}},
+    {label:'Qual. Shows MTD', sub:'Target: Emery 30 · Deniz 10',
+      emery:{v:emeryData.qualMTD, fmt:v=>v+' / 30', c:paceCat(emeryData.qualMTD,30)},
+      deniz:{v:denizData.qualMTD, fmt:v=>v+' / 10', c:paceCat(denizData.qualMTD,10)}},
   ];
   document.getElementById('setter-comp-body').innerHTML=rows.map(r=>`<tr>
     <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
@@ -1245,8 +1346,24 @@ function setDashMode(tab, mode, btn) {
   btn.classList.add('active');
   document.getElementById(`${tab}-view-individual`).classList.toggle('active', mode==='individual');
   document.getElementById(`${tab}-view-comparison`).classList.toggle('active', mode==='comparison');
-  document.getElementById(`${tab}-indiv-controls`).style.display = mode==='individual'?'flex':'none';
-  if(mode==='comparison'){tab==='closer'?renderCloserComp():renderSetterComp();}
+  // Show/hide person selector
+  const personCtrl = document.getElementById(`${tab}-person-controls`);
+  if (personCtrl) personCtrl.style.display = mode==='individual' ? 'flex' : 'none';
+  // Render appropriate view
+  if (mode==='comparison') {
+    tab==='closer' ? renderCloserComp() : renderSetterComp();
+  } else {
+    tab==='closer' ? renderCloserIndiv() : renderSetterIndiv();
+  }
+}
+
+function onCloserMonthChange() {
+  if (document.getElementById('closer-view-comparison').classList.contains('active')) renderCloserComp();
+  else renderCloserIndiv();
+}
+function onSetterMonthChange() {
+  if (document.getElementById('setter-view-comparison').classList.contains('active')) renderSetterComp();
+  else renderSetterIndiv();
 }
 
 function setCloserDateMode(mode, btn) {
@@ -1256,7 +1373,8 @@ function setCloserDateMode(mode, btn) {
   document.getElementById('closer-week-inputs').style.display=mode==='week'?'flex':'none';
   document.getElementById('closer-month-inputs').style.display=mode==='month'?'flex':'none';
   document.getElementById('closer-day-inputs').style.display=mode==='day'?'flex':'none';
-  renderCloserIndiv();
+  if (document.getElementById('closer-view-comparison').classList.contains('active')) renderCloserComp();
+  else renderCloserIndiv();
 }
 
 function setSetterDateMode(mode, btn) {
@@ -1266,7 +1384,8 @@ function setSetterDateMode(mode, btn) {
   document.getElementById('setter-week-inputs').style.display=mode==='week'?'flex':'none';
   document.getElementById('setter-month-inputs').style.display=mode==='month'?'flex':'none';
   document.getElementById('setter-day-inputs').style.display=mode==='day'?'flex':'none';
-  renderSetterIndiv();
+  if (document.getElementById('setter-view-comparison').classList.contains('active')) renderSetterComp();
+  else renderSetterIndiv();
 }
 
 // ─── PANELS ───────────────────────────────────────────────────────────────────
@@ -1276,7 +1395,7 @@ const DEFS={
   newContracts:'<strong>New Contracts</strong> — Qualified shows that closed (col N = Yes), anchored to call date.',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
   grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health.',
-  settingRate:'<strong>Setting Rate</strong> — Calls SET by Emery (col R) \u00f7 leads assigned to Emery (DM Index col H). Blank col H excluded.'
+  settingRate:'<strong>Setting Rate</strong> — Calls SET by all setters (Emery + Deniz, col R) ÷ leads assigned to setters (DM Index, col H). Blank col H = lead never interacted and is excluded.'
 };
 
 function handleClick(e,key,type,panelId) {
@@ -1334,11 +1453,18 @@ function openChartPanel(key,rect) {
 }
 
 function positionAndShow(panel,rect) {
-  panel.classList.add('active');document.getElementById('overlay').classList.add('active');
-  const pw=340;let left=rect.left+window.scrollX,top=rect.bottom+window.scrollY+10;
-  if(left+pw>window.innerWidth-16)left=window.innerWidth-pw-16;
-  if(top+320>window.innerHeight+window.scrollY)top=rect.top+window.scrollY-320-10;
-  panel.style.left=left+'px';panel.style.top=top+'px';
+  panel.classList.add('active');
+  document.getElementById('overlay').classList.add('active');
+  const pw=340, ph=360;
+  // rect is already viewport-relative — use directly for position:fixed elements
+  let left = rect.left;
+  let top  = rect.bottom + 10;
+  if (left + pw > window.innerWidth - 16) left = window.innerWidth - pw - 16;
+  if (left < 8) left = 8;
+  if (top + ph > window.innerHeight - 16) top = rect.top - ph - 10;
+  if (top < 8) top = 8;
+  panel.style.left = left + 'px';
+  panel.style.top  = top  + 'px';
 }
 
 // ─── INDIVIDUAL DASHBOARD PANELS ─────────────────────────────────────────────
@@ -1352,48 +1478,87 @@ function openIndivPanel(panelKey, e) {
   let title, leads, stats;
 
   if (panelKey === 'closer-calls') {
-    title = 'Calls Scheduled';
+    title = 'Calls Booked';
     leads = breakdown.map(r => ({name:r.name, source:r.status, cls:statusClass(r.status)}));
     const showed = breakdown.filter(r=>['Showed','Follow Up'].includes(r.status)).length;
     const canc = breakdown.filter(r=>r.status==='Cancelled').length;
     const noshow = breakdown.filter(r=>r.status==='No Show').length;
     stats = [{n:showed,l:'Showed'},{n:canc,l:'Cancelled'},{n:noshow,l:'No Show'},{n:breakdown.length,l:'Total'}];
+
   } else if (panelKey === 'closer-cancelled') {
     title = 'Calls Cancelled';
     const cancelled = breakdown.filter(r=>r.status==='Cancelled');
     leads = cancelled.map(r => ({name:r.name, source:'Cancelled', cls:'src-cancelled'}));
     stats = [{n:cancelled.length,l:'Cancelled'},{n:breakdown.length,l:'Of Total'}];
+
   } else if (panelKey === 'closer-contracts') {
     title = 'Contracts Closed';
     const closed = breakdown.filter(r=>r.sale==='Yes');
-    leads = closed.map(r => ({name:r.name, source:r.product||'—', cls:'src-emery', extra:r.product}));
-    stats = [{n:closed.length,l:'Closed'}];
+    leads = closed.map(r => ({
+      name: r.name,
+      source: r.product||'—',
+      cls: 'src-emery',
+      refund: r.refund
+    }));
+    const totalCash = closed.filter(r=>!r.refund).reduce((sum,r)=>sum+(r.cashCollected||0),0);
+    const refundCount = closed.filter(r=>r.refund).length;
+    stats = [{n:closed.length,l:'Closed'},{n:dollar(totalCash),l:'Net Cash'},{n:refundCount,l:'Refunds'}];
+
+  } else if (panelKey === 'closer-cash') {
+    title = 'Avg Cash Collected';
+    const closed = breakdown.filter(r=>r.sale==='Yes');
+    leads = closed.map(r => ({
+      name: r.name,
+      source: r.cashCollected>0 ? dollar(r.cashCollected) : '—',
+      cls: r.refund ? 'src-cancelled' : 'src-deniz',
+      refund: r.refund
+    }));
+    const validCash = closed.filter(r=>!r.refund&&r.cashCollected>0);
+    const totalCash = validCash.reduce((sum,r)=>sum+(r.cashCollected||0),0);
+    const avgCash = validCash.length>0 ? totalCash/validCash.length : 0;
+    stats = [{n:dollar(avgCash),l:'Average'},{n:dollar(totalCash),l:'Total'},{n:validCash.length,l:'Clients'}];
+
+  } else if (panelKey === 'closer-shows') {
+    title = 'Net Show Rate — Showed';
+    const showed = breakdown.filter(r=>['Showed','Follow Up','Disqualified on sales call'].includes(r.status));
+    leads = showed.map(r => ({name:r.name, source:r.status==='Follow Up'?'Follow Up':r.status==='Disqualified on sales call'?'DQ':'Showed', cls:statusClass(r.status)}));
+    const canc = breakdown.filter(r=>r.status==='Cancelled').length;
+    const comp = breakdown.filter(r=>['Showed','Follow Up','Cancelled','No Show','Disqualified on sales call'].includes(r.status)).length;
+    stats = [{n:showed.length,l:'Showed'},{n:canc,l:'Cancelled'},{n:comp-canc,l:'Net Denom'}];
+
   } else if (panelKey === 'setter-calls') {
     title = 'Calls Set';
-    leads = setterBreakdown.map(r => ({name:r.name, source:r.status||'—', cls:statusClass(r.status)}));
+    leads = setterBreakdown.map(r => ({name:r.name, source:r.status||'Pending', cls:statusClass(r.status)}));
     stats = [{n:setterBreakdown.length,l:'Total Set'}];
+
   } else if (panelKey === 'setter-cancelled') {
     title = 'Calls Cancelled';
-    const cancelled = (setterBreakdown).filter(r=>r.status==='Cancelled');
+    const cancelled = setterBreakdown.filter(r=>r.status==='Cancelled');
     leads = cancelled.map(r => ({name:r.name, source:'Cancelled', cls:'src-cancelled'}));
-    stats = [{n:cancelled.length,l:'Cancelled'}];
+    stats = [{n:cancelled.length,l:'Cancelled'},{n:setterBreakdown.length,l:'Of Total Set'}];
+
   } else if (panelKey === 'setter-qualified') {
-    title = 'Qualified Shows';
+    title = 'Qualified Shows MTD';
     const qual = setterBreakdown.filter(r=>r.qualified==='Yes');
     leads = qual.map(r => ({name:r.name, source:'Qualified', cls:'src-deniz'}));
     stats = [{n:qual.length,l:'Qualified'}];
   }
   if (!title) return;
 
-  // Reuse panel-calls for indiv panels
+  // Reuse panel-calls for all indiv panels
   const panel = document.getElementById('panel-calls');
   panel.querySelector('.panel-title').textContent = title;
   const listEl = document.getElementById('list-calls');
   const sumEl = document.getElementById('summary-calls');
 
-  listEl.innerHTML = (leads||[]).map(l =>
-    `<div class="lead-row"><span class="lead-name">${l.name}</span><span class="lead-source ${l.cls}">${l.source}</span></div>`
-  ).join('') || '<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
+  listEl.innerHTML = (leads||[]).map(l => {
+    const nameStyle = l.refund ? 'text-decoration:line-through;color:var(--text-faint);' : '';
+    const refundTag = l.refund ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Refund</span>` : '';
+    return `<div class="lead-row">
+      <span class="lead-name" style="${nameStyle}">${l.name}${refundTag}</span>
+      <span class="lead-source ${l.cls}" style="${l.refund?'opacity:0.5;':''}">${l.source}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
 
   sumEl.innerHTML = (stats||[]).map(s =>
     `<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`
