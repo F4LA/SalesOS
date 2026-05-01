@@ -668,6 +668,9 @@ function parseDate(s) {
   let m;
   m = s.match(/^(\w+)\s+(\d+),\s+(\d{4})$/);
   if (m) { const mo={January:0,February:1,March:2,April:3,May:4,June:5,July:6,August:7,September:8,October:9,November:10,December:11}[m[1]]; if(mo!==undefined)return new Date(+m[3],mo,+m[2]); }
+  // M/D/YYYY H:MM:SS — Google Forms timestamp format
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (m) { let yr=+m[3]; if(yr<100)yr+=2000; return new Date(yr,+m[1]-1,+m[2],+m[4],+m[5],+m[6]); }
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (m) { let yr=+m[3]; if(yr<100)yr+=2000; return new Date(yr,+m[1]-1,+m[2]); }
   m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -699,9 +702,16 @@ async function fetchExternalSheet(sheetId, tab) {
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}?key=${API_KEY}`;
   try {
     const res=await fetch(url);
-    if(!res.ok) return [];
+    if(!res.ok) {
+      const errText = await res.text();
+      console.warn(`Form sheet fetch failed (${res.status}):`, errText.slice(0,200));
+      return [];
+    }
     const data=await res.json();
-    return (data.values||[]).slice(1);
+    const rows = (data.values||[]).slice(1);
+    console.log(`Form sheet ${sheetId.slice(0,8)}... tab "${tab}": ${rows.length} rows`);
+    if (rows.length > 0) console.log('  First row timestamp:', rows[0][0], '| name:', rows[0][1]);
+    return rows;
   } catch(e) { console.warn('Form sheet fetch failed:', e); return []; }
 }
 
@@ -714,11 +724,11 @@ function calcWeek(ws) {
   const completed = happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
   const showed = happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
   const qual = happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-  const contracts = qual.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+  const contracts = happened.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
   const cancelled = completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
   const netDenom = completed.length - cancelled.length;
 
-  // Gross show rate = showed / completed
+  // Gross show rate = showed / completed (all statuses including cancelled in denominator)
   const grossShowRate = completed.length>0 ? showed.length/completed.length : 0;
   const netShowRate = netDenom>0 ? showed.length/netDenom : 0;
   const closeRate = qual.length>0 ? contracts.length/qual.length : 0;
@@ -741,7 +751,7 @@ function calcWeek(ws) {
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-    const ct=q.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const ct=cc.filter(r=>(r[L.endInSale]||'').trim()==='Yes');  // count all sales, not just qual
     const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const nd=comp.length-canc.length;
     const sheetCloserName = name === 'Dr. Joey' ? 'Joey' : name;
@@ -792,7 +802,7 @@ function calcRange(start, end, name, type) {
     const completed=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const showed=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const qual=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-    const contracts=qual.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const contracts=happened.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
     const cancelled=completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const netDenom=completed.length-cancelled.length;
     const grossShowRate=completed.length>0?showed.length/completed.length:0;
@@ -815,7 +825,7 @@ function calcRange(start, end, name, type) {
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-    const ct=q.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const ct=cc.filter(r=>(r[L.endInSale]||'').trim()==='Yes');  // count all sales, not just qual
     const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const nd=comp.length-canc.length;
     // Client Mastersheet uses 'Joey' not 'Dr. Joey'
@@ -1747,22 +1757,22 @@ function jumpToWeek(idx) {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 function initDashDefaults() {
   const today=new Date(); today.setHours(0,0,0,0);
-  const lastWs=addDays(weekStart(today),-7);
+  const thisWs=weekStart(today);   // current week — so reflections submitted this week show up
   const mo=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
 
-  // Set default dates for all pickers
-  _pickerDates['sc-week']     = new Date(lastWs);
+  // Default to CURRENT week (not last week)
+  _pickerDates['sc-week']     = new Date(thisWs);
   _pickerDates['sc-day']      = new Date(today);
-  _pickerDates['closer-week'] = new Date(lastWs);
+  _pickerDates['closer-week'] = new Date(thisWs);
   _pickerDates['closer-day']  = new Date(today);
-  _pickerDates['setter-week'] = new Date(lastWs);
+  _pickerDates['setter-week'] = new Date(thisWs);
   _pickerDates['setter-day']  = new Date(today);
 
   // Populate inputs and end displays
-  const weEnd = addDays(lastWs,6);
+  const weEnd = addDays(thisWs,6);
   ['sc','closer','setter'].forEach(p => {
     const wi = document.getElementById('dinput-'+p+'-week');
-    if (wi) wi.value = fmtDateAmerican(lastWs);
+    if (wi) wi.value = fmtDateAmerican(thisWs);
     const di = document.getElementById('dinput-'+p+'-day');
     if (di) di.value = fmtDateAmerican(today);
     const endEl = document.getElementById(p+'-week-end-display');
@@ -1895,24 +1905,20 @@ function renderSetterTrend(name, currentRange) {
 }
 
 // ─── FORM REFLECTION RENDERING ───────────────────────────────────────────────
-function findFormResponse(formRaw, personName, weekStartDate) {
-  // formRaw columns: 0=Timestamp, 1=Name, 2..N=answers
-  // Match by name and timestamp falling within the week (Fri-Thu)
-  // With 1 day buffer: timestamp on Friday AM still counts for previous week
-  const ws = new Date(weekStartDate); ws.setHours(0,0,0,0);
-  const we = addDays(ws, 7); we.setHours(23,59,59,999); // 1 day buffer past Thu
+function findFormResponse(formRaw, personName, rangeStart, rangeEnd) {
+  const ws = new Date(rangeStart); ws.setHours(0,0,0,0);
+  const we = new Date(rangeEnd || rangeStart); we.setHours(23,59,59,999);
+  const wsBuffer = addDays(ws, -1);
+  const weBuffer = addDays(we, 1);
 
   for (let i = formRaw.length-1; i>=0; i--) {
     const row = formRaw[i];
     const ts = parseDate(row[0]);
     const name = (row[1]||'').trim();
     if (!ts || !name) continue;
-    // Name matching: check if form name contains person name or vice versa
     const nameMatch = name.toLowerCase().includes(personName.toLowerCase()) ||
                       personName.toLowerCase().includes(name.toLowerCase());
-    if (nameMatch && ts >= ws && ts <= we) {
-      return row;
-    }
+    if (nameMatch && ts >= wsBuffer && ts <= weBuffer) return row;
   }
   return null;
 }
@@ -1925,7 +1931,7 @@ function renderFormSection(prefix, formRaw, questions, personName, range) {
   if (dateMode !== 'week') { section.style.display='none'; return; }
   section.style.display='block';
 
-  const response = findFormResponse(formRaw, personName, range.start);
+  const response = findFormResponse(formRaw, personName, range.start, range.end);
 
   if (!response) {
     body.innerHTML = '<div class="form-empty">No reflection submitted for this week.</div>';
