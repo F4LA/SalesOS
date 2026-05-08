@@ -626,7 +626,7 @@ const TAB_CLIENT = 'Client Mastersheet';
 
 const L = { firstName:0,lastName:1,email:2,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
 const D = { newLeadTS:4, setter:7 };
-const C = { email:2, datePurchased:5, salesPerson:12, refund:24, cashCollected:25 };  // col C=email, col Y=refund, col Z=cashCollected
+const C = { firstName:0, lastName:1, email:2, product:3, datePurchased:5, salesPerson:12, refund:24, cashCollected:25 };  // col A=firstName, col B=lastName, col C=email, col D=product, col Y=refund, col Z=cashCollected
 
 const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales call','Follow Up']);
 const SHOWED    = new Set(['Showed','Follow Up','Disqualified on sales call']);
@@ -724,7 +724,7 @@ function calcWeek(ws) {
   const completed = happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
   const showed = happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
   const qual = happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-  const contracts = happened.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+  const contracts = clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we); });
   const cancelled = completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
   const netDenom = completed.length - cancelled.length;
 
@@ -778,7 +778,7 @@ function calcWeek(ws) {
 
   const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-  const contractsList=contracts.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+  const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[C.salesPerson]||'').trim(),product:(r[C.product]||'').trim()}));
 
   return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:contracts.length,
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
@@ -802,7 +802,7 @@ function calcRange(start, end, name, type) {
     const completed=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const showed=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const qual=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
-    const contracts=happened.filter(r=>(r[L.endInSale]||'').trim()==='Yes');
+    const contracts=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e); });
     const cancelled=completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const netDenom=completed.length-cancelled.length;
     const grossShowRate=completed.length>0?showed.length/completed.length:0;
@@ -816,7 +816,7 @@ function calcRange(start, end, name, type) {
     const settingRate=totalDM>0?totalSet/totalDM:0;
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
     const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-    const contractsList=contracts.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'').trim(),product:(r[L.productPurchased]||'').trim()}));
+    const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[C.salesPerson]||'').trim(),product:(r[C.product]||'').trim()}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList,
       settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM} };
@@ -1541,7 +1541,7 @@ function setSetterDateMode(mode, btn) {
 const DEFS={
   callsBooked:'<strong>Calls Booked</strong> — Total calls that occurred this week (col K). Same universe as all other metrics.',
   qualShows:'<strong>Qualified Shows</strong> — Showed or Follow Up this week. DQ excluded.',
-  newContracts:'<strong>New Contracts</strong> — Qualified shows that closed (col N = Yes), anchored to call date.',
+  newContracts:'<strong>New Contracts</strong> — Clients purchased in the period (anchored to Date Purchased in Mastersheet).',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
   grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health.',
   settingRate:'<strong>Setting Rate</strong> — Calls SET by all setters (Emery + Deniz, col R) ÷ leads assigned to setters (DM Index, col H). Blank col H = lead never interacted and is excluded.'
