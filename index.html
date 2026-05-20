@@ -16,7 +16,7 @@
   --border: #E2E8F0; --border-strong: #C8D4E0;
   --green: #1A9E5C; --green-bg: #E8F8F0; --green-border: #A3DFC0;
   --red: #C93A3A; --red-bg: #FDEAEA; --red-border: #F0AAAA;
-  --gold: #0A7C5C; --gold-bg: #E6F7F2; --gold-border: #7DD4BE;
+  --gold: #1A5F8A; --gold-bg: #E3F2FC; --gold-border: #90C4E0;
   --sans: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace; --radius: 14px;
 }
 body { background: var(--bg); color: var(--text-body); font-family: var(--sans); font-size: 15px; min-height: 100vh; line-height: 1.6; -webkit-font-smoothing: antialiased; }
@@ -113,6 +113,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .src-inbound { background: #FEF3E2; color: #B45309; border: 1px solid #F4C17A; }       /* Amber */
 .src-deniz   { background: #E8F8F0; color: #1A9E5C; border: 1px solid #A3DFC0; }       /* Green */
 .src-joey    { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }       /* Indigo */
+.src-challenge { background: #F5F0FF; color: #6D28D9; border: 1px solid #C4B5FD; }     /* Purple */
 .src-cancelled { background: #FDEAEA; color: #C93A3A; border: 1px solid #F0AAAA; }     /* Red */
 .panel-summary { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .sum-stat { display: flex; flex-direction: column; gap: 1px; }
@@ -1588,13 +1589,13 @@ function openVolumePanel(panelId,key,w,rect) {
   const listEl=document.getElementById('list-'+suffix);
   const sumEl=document.getElementById('summary-'+suffix);
   let leads,stats;
-  if(key==='callsBooked'){leads=w.callsList;const e=leads.filter(l=>l.source==='Emery').length,d=leads.filter(l=>l.source==='Deniz').length,i=leads.length-e-d;stats=[{n:e,l:'Emery'},{n:d,l:'Deniz'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
+  if(key==='callsBooked'){leads=w.callsList;const e=leads.filter(l=>l.source==='Emery').length,ch=leads.filter(l=>l.source==='21 Day Challenge').length,i=leads.length-e-ch;stats=[{n:e,l:'Emery'},{n:ch,l:'Challenge'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
   else if(key==='qualShows'){leads=w.showsList;const e=leads.filter(l=>l.source==='Emery').length,i=leads.length-e;stats=[{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
   else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product}));const d=w.contractsList.filter(l=>l.closer==='Deniz').length,j=w.contractsList.filter(l=>l.closer==='Dr. Joey').length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];}
   listEl.innerHTML=leads.map(l=>{
     let lbl,cls;
     if(key==='newContracts'){lbl=l.source==='Dr. Joey'?'Joey':l.source||'—';cls=l.source==='Dr. Joey'?'src-joey':'src-deniz';}
-    else{const iE=l.source==='Emery',iD=l.source==='Deniz';lbl=iE?'Emery':iD?'Deniz':'Inbound';cls=iE?'src-emery':iD?'src-deniz':'src-inbound';}
+    else{const iE=l.source==='Emery',iCh=(l.source||'').includes('Challenge');lbl=iE?'Emery':iCh?'Challenge':'Inbound';cls=iE?'src-emery':iCh?'src-challenge':'src-inbound';}
     const fuTag=key==='qualShows'&&l.status==='Follow Up'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`:'';
     const prodTag=key==='newContracts'&&l.product?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`:'';
     return `<div class="lead-row"><span class="lead-name">${l.name}${fuTag}${prodTag}</span><span class="lead-source ${cls}">${lbl}</span></div>`;
