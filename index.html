@@ -625,7 +625,19 @@ const TAB_DMS    = 'DM TRACKING INDEX';
 const TAB_CLIENT = 'Client Mastersheet';
 
 const L = { firstName:0,lastName:1,email:2,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
-const D = { newLeadTS:4, setter:7 };
+const D = { firstName:0, lastName:1, igHandle:2, newLeadTS:4, setter:7 };
+
+// Returns unique lead count from a pre-filtered array of DM rows.
+// Identity key: IG Handle (col C) if present, else FirstName+LastName.
+function uniqueDMCount(rows) {
+  const seen = new Set();
+  for (const r of rows) {
+    const ig = (r[D.igHandle]||'').trim().toLowerCase();
+    const key = ig || ((r[D.firstName]||'').trim()+' '+(r[D.lastName]||'').trim()).trim().toLowerCase() || '__unknown__';
+    seen.add(key);
+  }
+  return seen.size;
+}
 const C = { firstName:0, lastName:1, email:2, product:3, datePurchased:5, salesPerson:12, newOrResign:18, refund:24, cashCollected:25 };  // col A=firstName, col B=lastName, col C=email, col D=product, col Y=refund, col Z=cashCollected
 
 const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales call','Follow Up']);
@@ -740,7 +752,10 @@ function calcWeek(ws) {
   const dmDeniz = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Deniz'; });
   const totalSet = emerySet.length + denizSet.length;
   const totalDM = dmEmery.length + dmDeniz.length;
-  const settingRate = totalDM>0 ? totalSet/totalDM : 0;
+  const uniqueDMEmery = uniqueDMCount(dmEmery);
+  const uniqueDMDeniz = uniqueDMCount(dmDeniz);
+  const uniqueTotalDM = uniqueDMCount([...dmEmery, ...dmDeniz]);
+  const settingRate = uniqueTotalDM>0 ? totalSet/uniqueTotalDM : 0;
 
   const monthStart = new Date(we.getFullYear(),we.getMonth(),1);
   const emeryQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Emery'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
@@ -783,11 +798,11 @@ function calcWeek(ws) {
   return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:contracts.length,
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
     setter:{
-      emery:{rate:dmEmery.length>0?emerySet.length/dmEmery.length:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:dmEmery.length},
-      deniz:{rate:dmDeniz.length>0?denizSet.length/dmDeniz.length:0, qualMTD:denizQualMTD, callsSet:denizSet.length, dmLeads:dmDeniz.length}
+      emery:{rate:uniqueDMEmery>0?emerySet.length/uniqueDMEmery:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:uniqueDMEmery, dmLeadsRaw:dmEmery.length},
+      deniz:{rate:uniqueDMDeniz>0?denizSet.length/uniqueDMDeniz:0, qualMTD:denizQualMTD, callsSet:denizSet.length, dmLeads:uniqueDMDeniz, dmLeadsRaw:dmDeniz.length}
     },
     callsList,showsList,contractsList,
-    settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM}
+    settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM,uniqueDMEmery,uniqueDMDeniz,uniqueTotalDM}
   };
 }
 
@@ -812,14 +827,17 @@ function calcRange(start, end, name, type) {
     const denizSet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Deniz'; });
     const dmEmery=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Emery'; });
     const dmDeniz=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Deniz'; });
-    const totalSet=emerySet.length+denizSet.length, totalDM=dmEmery.length+dmDeniz.length;
-    const settingRate=totalDM>0?totalSet/totalDM:0;
+    const totalSet=emerySet.length+denizSet.length;
+    const totalDM=dmEmery.length+dmDeniz.length;
+    const uniqueDMEmery=uniqueDMCount(dmEmery), uniqueDMDeniz=uniqueDMCount(dmDeniz);
+    const uniqueTotalDM=uniqueDMCount([...dmEmery,...dmDeniz]);
+    const settingRate=uniqueTotalDM>0?totalSet/uniqueTotalDM:0;
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
     const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
     const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[C.salesPerson]||'').trim(),product:(r[C.product]||'').trim()}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList,
-      settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM} };
+      settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM,uniqueDMEmery,uniqueDMDeniz,uniqueTotalDM} };
   } else if (type==='closer') {
     const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); const st=(r[L.callStatus]||'').trim(); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name&&st!=='Confirmed'; });
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
@@ -882,7 +900,8 @@ function calcRange(start, end, name, type) {
     });
     return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash, showed:sh.length, contracts:ct.length, qual:q.length, breakdown };
   } else {
-    const dmLeads=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
+    const dmLeadsRaw=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
+    const dmLeadsUnique=uniqueDMCount(dmLeadsRaw);
     const setLeads=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
     // Use happened (col K) for show/qual stats, setLeads for cancelled + breakdown (same universe)
     const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
@@ -894,13 +913,13 @@ function calcRange(start, end, name, type) {
     const cancSet=setLeads.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const qualMTD=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,e)&&(r[L.source]||'').trim()===name&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
     const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
-    return { dmLeads:dmLeads.length, callsSet:setLeads.length, settingRate:dmLeads.length>0?setLeads.length/dmLeads.length:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, breakdown };
+    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, breakdown };
   }
 }
 
 // ─── THRESHOLDS ───────────────────────────────────────────────────────────────
 function cat(metric,val) {
-  const t={callsBooked:{r:17,a:20},qualShows:{r:12,a:15},newContracts:{r:3,a:5},closeRate:{r:0.35,a:0.45},grossShowRate:{r:0.65,a:0.75},settingRate:{r:0.025,a:0.030}}[metric];
+  const t={callsBooked:{r:17,a:20},qualShows:{r:12,a:15},newContracts:{r:3,a:5},closeRate:{r:0.35,a:0.45},grossShowRate:{r:0.65,a:0.75},settingRate:{r:0.023,a:0.030}}[metric];
   if(!t)return'green';
   if(t.a&&val>=t.a)return'gold';
   return val>=t.r?'green':'red';
@@ -1010,7 +1029,7 @@ function renderScorecard() {
     {key:'newContracts', name:'New Contracts',      val:w.newContracts,   fmt:v=>v,   thresh:'Red < 3  ·  Green 3–4  ·  Amazing 5+',           type:'volume',panel:'panel-contracts'},
     {key:'closeRate',    name:'Close Rate',         val:w.closeRate,      fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',    type:'chart'},
     {key:'grossShowRate',name:'Gross Show Rate',    val:w.grossShowRate,  fmt:pct,    thresh:'Red < 65%  ·  Green 65–74%  ·  Amazing 75%+',    type:'chart'},
-    {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2.5%  ·  Green 2.5–2.9%  ·  Amazing 3%+', type:'volume',panel:'panel-setting'},
+    {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2.3%  ·  Green 2.3–2.9%  ·  Amazing 3%+', type:'volume',panel:'panel-setting'},
   ];
 
   let reds=0;
@@ -1359,12 +1378,12 @@ function renderSetterIndiv() {
 
   const cards = [
     makeIndivCard(
-      'Leads Received', 'Assigned in period',
+      'Leads Received', 'Unique leads assigned in period',
       'neutral', d.dmLeads, null, null,
-      'Total leads assigned to this setter in the DM Index (col H) for this period.'
+      `Unique leads assigned to this setter (${d.dmLeadsRaw||d.dmLeads} raw opt-ins, deduplicated by identity within the period).`
     ),
     makeIndivCard(
-      'Setting Rate', 'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
+      'Setting Rate', 'Red < 2.3%  ·  Green 2.3%+  ·  Amazing 3%+',
       cat('settingRate', d.settingRate),
       sRateMode==='pct' ? sRatePctStr : sRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.settingRate='${sRateMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sRateMode==='pct'?`# ${sRateNum}`:`% ${sRatePctStr}`}</button>`,
@@ -1472,7 +1491,7 @@ function renderSetterComp() {
   function paceCat(actual,target){ const exp=(target/daysInMonth)*dayOfMonth; if(actual>=exp*1.10)return'gold'; if(actual>=exp*0.90)return'green'; return'red'; }
 
   const rows=[
-    {label:'Setting Rate', sub:'Red < 2.5%  ·  Green 2.5%+  ·  Amazing 3%+',
+    {label:'Setting Rate', sub:'Red < 2.3%  ·  Green 2.3%+  ·  Amazing 3%+',
       emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)},
       deniz:{v:denizData.settingRate, fmt:pct1, c:cat('settingRate',denizData.settingRate)}},
     {label:'Calls Set', sub:'Total in period',
@@ -1544,7 +1563,7 @@ const DEFS={
   newContracts:'<strong>New Contracts</strong> — Clients purchased in the period (anchored to Date Purchased in Mastersheet).',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
   grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health.',
-  settingRate:'<strong>Setting Rate</strong> — Calls SET by all setters (Emery + Deniz, col R) ÷ leads assigned to setters (DM Index, col H). Blank col H = lead never interacted and is excluded.'
+  settingRate:'<strong>Setting Rate</strong> — Calls SET ÷ unique leads assigned (DM Index, col H). Unique = one person counted once per week even if they requested multiple resources. Raw total shown in parentheses for reference.'
 };
 
 function handleClick(e,key,type,panelId) {
@@ -1560,7 +1579,7 @@ function openVolumePanel(panelId,key,w,rect) {
     const sd=w.settingData;
     document.getElementById('summary-setting').innerHTML=[
       {n:sd.emerySet,l:'Emery Set'},{n:sd.denizSet,l:'Deniz Set'},
-      {n:sd.totalDM,l:'Total Leads'},{n:pct1(w.settingRate),l:'Dept Rate'}
+      {n:`${sd.uniqueTotalDM} <span style="font-size:10px;color:var(--text-faint)">(${sd.totalDM} raw)</span>`,l:'Unique Leads'},{n:pct1(w.settingRate),l:'Dept Rate'}
     ].map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
     const d=document.getElementById('def-setting'); if(d)d.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
     positionAndShow(panel,rect); return;
@@ -1592,7 +1611,7 @@ function openChartPanel(key,rect) {
   const completed=WEEKS.filter(w=>!w.isCurrent).slice(-8);
   const labels=completed.map(wk=>{const n=Math.ceil((wk.ws-new Date(wk.ws.getFullYear(),0,1))/(7*24*3600*1000));return`W${String(n).padStart(2,'0')}`;});
   const vals=completed.map(wk=>{const w=calcWeek(wk.ws);return key==='settingRate'?parseFloat((w[key]*100).toFixed(1)):Math.round(w[key]*100);});
-  const thresh={closeRate:35,grossShowRate:65,settingRate:2.5}[key];
+  const thresh={closeRate:35,grossShowRate:65,settingRate:2.3}[key];
   const def=document.getElementById('def-chart'); if(def&&DEFS[key])def.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
   positionAndShow(panel,rect);
   if(trendChart){trendChart.destroy();trendChart=null;}
