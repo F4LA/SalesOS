@@ -815,7 +815,7 @@ function calcWeek(ws) {
     const canc=comp.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const nd=comp.length-canc.length;
     const sheetCloserName = name === 'Dr. Joey' ? 'Joey' : name;
-    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we)&&(r[C.salesPerson]||'').trim()===sheetCloserName; });
+    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we)&&(r[C.salesPerson]||'').trim()===sheetCloserName&&(r[C.newOrResign]||'').trim().toLowerCase()==='new'; });
     // Build email+name lookup for accurate cash matching
     const ccByEmail={}, ccByName={};
     closerClients.forEach(cr=>{
@@ -905,7 +905,7 @@ function calcRange(start, end, name, type) {
     const nd=comp.length-canc.length;
     // Client Mastersheet uses 'Joey' not 'Dr. Joey'
     const sheetName = name === 'Dr. Joey' ? 'Joey' : name;
-    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e)&&(r[C.salesPerson]||'').trim()===sheetName; });
+    const closerClients=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e)&&(r[C.salesPerson]||'').trim()===sheetName&&(r[C.newOrResign]||'').trim().toLowerCase()==='new'; });
     const ccByEmail2={}, ccByName2={};
     closerClients.forEach(cr=>{
       const em=(cr[C.email]||'').trim().toLowerCase();
@@ -926,7 +926,8 @@ function calcRange(start, end, name, type) {
     const sheetCloserName2 = name==='Dr. Joey'?'Joey':name;
     const clientsInRange = clientRaw.filter(cr => {
       const d = parseDate(cr[C.datePurchased]);
-      return d && inRange(d,s,e) && (cr[C.salesPerson]||'').trim()===sheetCloserName2;
+      return d && inRange(d,s,e) && (cr[C.salesPerson]||'').trim()===sheetCloserName2
+        && (cr[C.newOrResign]||'').trim().toLowerCase()==='new';
     });
     // Build lookup maps
     const cashByEmail = {}, cashByName = {};
@@ -1438,10 +1439,10 @@ function renderCloserIndiv() {
       'New contracts ÷ qualified shows. Does not count refunds against close rate.'
     ),
     makeIndivCard(
-      'Avg Cash Collected', 'Per contract closed',
+      'Avg Cash Collected', '1:1 Coaching only',
       d.avgCash>0?'green':'neutral', dollar(d.avgCash), null,
       `openIndivPanel('closer-cash', event)`,
-      'Average cash collected per closed contract. Refunds excluded from calculation.'
+      'Average cash collected per closed contract (1:1 Coaching only). Re-signs and refunds excluded.'
     ),
   ];
 
@@ -1856,8 +1857,10 @@ function openIndivPanel(panelKey, e) {
     leads = closed.map(r => ({
       name: r.name,
       source: r.cashCollected>0 ? dollar(r.cashCollected) : '—',
-      cls: r.refund ? 'src-cancelled' : 'src-deniz',
-      refund: r.refund
+      cls: r.refund ? 'src-cancelled' : r.cashCollected>0 ? 'src-deniz' : 'src-inbound',
+      refund: r.refund,
+      product: r.product||'',
+      cashCollected: r.cashCollected||0
     }));
     const validCash = closed.filter(r=>!r.refund&&r.cashCollected>0);
     const totalCash = validCash.reduce((sum,r)=>sum+(r.cashCollected||0),0);
@@ -1900,8 +1903,11 @@ function openIndivPanel(panelKey, e) {
   listEl.innerHTML = (leads||[]).map(l => {
     const nameStyle = l.refund ? 'text-decoration:line-through;color:var(--text-faint);' : '';
     const refundTag = l.refund ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Refund</span>` : '';
+    const isOther = !l.refund && l.source==='—';
+    const otherLabel = (l.product && !['1:1 Coaching','1-on-1 Coaching','One on One','1 on 1 Coaching'].some(v=>l.product.toLowerCase().includes(v.toLowerCase()))) ? l.product : 'Other Product';
+    const groupTag = isOther ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:#F0F0F5;color:#6B7280;border:1px solid #D1D5DB;font-weight:600;margin-left:4px;">${otherLabel}</span>` : '';
     return `<div class="lead-row">
-      <span class="lead-name" style="${nameStyle}">${l.name}${refundTag}</span>
+      <span class="lead-name" style="${nameStyle}">${l.name}${refundTag}${groupTag}</span>
       <span class="lead-source ${l.cls}" style="${l.refund?'opacity:0.5;':''}">${l.source}</span>
     </div>`;
   }).join('') || '<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
