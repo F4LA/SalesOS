@@ -641,6 +641,20 @@ function uniqueDMCount(rows) {
 }
 const C = { firstName:0, lastName:1, email:2, product:3, datePurchased:5, salesPerson:12, newOrResign:18, refund:24, cashCollected:25 };  // col A=firstName, col B=lastName, col C=email, col D=product, col Y=refund, col Z=cashCollected
 
+
+// Normalize legacy/variant product names to canonical display labels
+function normalizeProduct(p) {
+  const lower = (p||"").toLowerCase();
+  if (lower.includes("21 day") || lower.includes("21day") || lower.includes("challenge")) return "1:1 Coaching";
+  return p;
+}
+
+// Normalize closer names to canonical form used throughout the dashboard
+function normalizeCloser(n) {
+  if (n === "Joey" || n === "Dr. Joey" || n.toLowerCase().includes("joey")) return "Dr. Joey";
+  if (n.toLowerCase().includes("deniz")) return "Deniz";
+  return n;
+}
 const COMPLETED = new Set(['Showed','Cancelled','No Show','Disqualified on sales call','Follow Up']);
 const SHOWED    = new Set(['Showed','Follow Up','Disqualified on sales call']);
 const QUAL      = new Set(['Showed','Follow Up']);
@@ -733,7 +747,7 @@ function calcWeek(ws) {
   const we = addDays(ws,6); we.setHours(23,59,59,999);
   const wsD = new Date(ws); wsD.setHours(0,0,0,0);
 
-  const happened = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,wsD,we); });
+  const happened = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,wsD,we); });
   const completed = happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
   const showed = happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
   const qual = happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
@@ -794,7 +808,7 @@ function calcWeek(ws) {
 
   const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-  const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[C.salesPerson]||'').trim(),product:(r[C.product]||'').trim()}));
+  const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
 
   return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:contracts.length,
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
@@ -814,7 +828,7 @@ function calcRange(start, end, name, type) {
 
   if (type==='scorecard') {
     // Full department scorecard for arbitrary range
-    const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e); });
+    const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e); });
     const completed=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const showed=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const qual=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
@@ -835,7 +849,7 @@ function calcRange(start, end, name, type) {
     const settingRate=uniqueTotalDM>0?totalSet/uniqueTotalDM:0;
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
     const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-    const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[C.salesPerson]||'').trim(),product:(r[C.product]||'').trim()}));
+    const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList,
       settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM,uniqueDMEmery,uniqueDMDeniz,uniqueTotalDM} };
@@ -1559,7 +1573,7 @@ function setSetterDateMode(mode, btn) {
 
 // ─── PANELS ───────────────────────────────────────────────────────────────────
 const DEFS={
-  callsBooked:'<strong>Calls Booked</strong> — Total calls that occurred this week (col K). Same universe as all other metrics.',
+  callsBooked:'<strong>Calls Booked</strong> — Total calls booked/set this week (col R, Call Scheduled Date). Leading indicator.',
   qualShows:'<strong>Qualified Shows</strong> — Showed or Follow Up this week. DQ excluded.',
   newContracts:'<strong>New Contracts</strong> — Clients purchased in the period (anchored to Date Purchased in Mastersheet).',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
