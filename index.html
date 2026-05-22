@@ -319,6 +319,18 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
   <div class="panel-header"><span class="panel-title">New Contracts · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
   <div class="panel-body"><div class="lead-list" id="list-contracts"></div><div class="panel-summary" id="summary-contracts"></div><div id="def-contracts" class="panel-definition"></div></div>
 </div>
+<div class="floating-panel" id="panel-close">
+  <div class="panel-header"><span class="panel-title">Close Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
+  <div class="panel-summary" id="summary-close"></div>
+  <div class="panel-list" id="list-close"></div>
+  <div class="panel-def" id="def-close"></div>
+</div>
+<div class="floating-panel" id="panel-gross">
+  <div class="panel-header"><span class="panel-title">Gross Show Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
+  <div class="panel-summary" id="summary-gross"></div>
+  <div class="panel-list" id="list-gross"></div>
+  <div class="panel-def" id="def-gross"></div>
+</div>
 <div class="floating-panel" id="panel-setting">
   <div class="panel-header"><span class="panel-title">Setting Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
   <div class="panel-body"><div class="panel-summary" id="summary-setting" style="margin-top:0;padding-top:0;border-top:none;"></div><div id="def-setting" class="panel-definition"></div></div>
@@ -435,6 +447,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         </div>
         <span class="date-label" style="color:var(--text-faint);">→ 7 days</span>
         <span class="date-display" id="closer-week-end-display">—</span>
+        <div class="nav-arrows" style="display:flex;gap:4px;margin-left:4px;">
+          <button class="cpk-nav" onclick="navigateCloser(-1)">‹</button>
+          <button class="cpk-nav" onclick="navigateCloser(1)">›</button>
+        </div>
       </div>
       <div id="closer-month-inputs" style="display:none;align-items:center;gap:8px;">
         <input type="month" class="date-input" id="closer-month" onchange="onCloserMonthChange()">
@@ -524,7 +540,6 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
     <div id="setter-person-controls" style="display:flex;align-items:center;gap:8px;">
       <select class="person-select" id="setter-person" onchange="renderSetterIndiv()">
         <option value="Emery">Emery</option>
-        <option value="Deniz">Deniz</option>
       </select>
     </div>
     <!-- Date controls: always visible -->
@@ -542,6 +557,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
         </div>
         <span class="date-label" style="color:var(--text-faint);">→ 7 days</span>
         <span class="date-display" id="setter-week-end-display">—</span>
+        <div class="nav-arrows" style="display:flex;gap:4px;margin-left:4px;">
+          <button class="cpk-nav" onclick="navigateSetter(-1)">‹</button>
+          <button class="cpk-nav" onclick="navigateSetter(1)">›</button>
+        </div>
       </div>
       <div id="setter-month-inputs" style="display:none;align-items:center;gap:8px;">
         <input type="month" class="date-input" id="setter-month" onchange="onSetterMonthChange()">
@@ -609,7 +628,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
       <div class="role-card">
         <div class="role-card-header"><span class="role-title">Setter</span><span class="role-hint" id="setter-comp-hint">weekly · MTD</span></div>
         <table class="role-table">
-          <thead><tr><th>Metric</th><th>Emery</th><th>Deniz</th></tr></thead>
+          <thead><tr><th>Metric</th><th>Emery</th></tr></thead>
           <tbody id="setter-comp-body"></tbody>
         </table>
       </div>
@@ -760,21 +779,17 @@ function calcWeek(ws) {
   const netShowRate = netDenom>0 ? showed.length/netDenom : 0;
   const closeRate = qual.length>0 ? contracts.length/qual.length : 0;
 
-  // Setting rate — all setters (Emery + Deniz) for scorecard
+  // Setting rate — Emery only
   const emerySet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&(r[L.source]||'').trim()==='Emery'; });
-  const denizSet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&(r[L.source]||'').trim()==='Deniz'; });
   const dmEmery = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Emery'; });
-  const dmDeniz = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Deniz'; });
-  const totalSet = emerySet.length + denizSet.length;
-  const totalDM = dmEmery.length + dmDeniz.length;
+  const totalSet = emerySet.length;
+  const totalDM = dmEmery.length;
   const uniqueDMEmery = uniqueDMCount(dmEmery);
-  const uniqueDMDeniz = uniqueDMCount(dmDeniz);
-  const uniqueTotalDM = uniqueDMCount([...dmEmery, ...dmDeniz]);
+  const uniqueTotalDM = uniqueDMEmery;
   const settingRate = uniqueTotalDM>0 ? totalSet/uniqueTotalDM : 0;
 
   const monthStart = new Date(we.getFullYear(),we.getMonth(),1);
   const emeryQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Emery'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
-  const denizQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Deniz'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
 
   function closerStats(name) {
     const cc=happened.filter(r=>(r[L.salesCallWith]||'').trim()===name);
@@ -807,6 +822,8 @@ function calcWeek(ws) {
   }
 
   const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
+  const closeList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed:(r[L.endInSale]||'No').trim()}));
+  const grossList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
   const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
 
@@ -814,10 +831,9 @@ function calcWeek(ws) {
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
     setter:{
       emery:{rate:uniqueDMEmery>0?emerySet.length/uniqueDMEmery:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:uniqueDMEmery, dmLeadsRaw:dmEmery.length},
-      deniz:{rate:uniqueDMDeniz>0?denizSet.length/uniqueDMDeniz:0, qualMTD:denizQualMTD, callsSet:denizSet.length, dmLeads:uniqueDMDeniz, dmLeadsRaw:dmDeniz.length}
     },
-    callsList,showsList,contractsList,
-    settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM,uniqueDMEmery,uniqueDMDeniz,uniqueTotalDM}
+    callsList,showsList,contractsList,closeList,grossList,
+    settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM}
   };
 }
 
@@ -839,20 +855,20 @@ function calcRange(start, end, name, type) {
     const closeRate=qual.length>0?contracts.length/qual.length:0;
     // Setting rate — all setters
     const emerySet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Emery'; });
-    const denizSet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Deniz'; });
     const dmEmery=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Emery'; });
-    const dmDeniz=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Deniz'; });
-    const totalSet=emerySet.length+denizSet.length;
-    const totalDM=dmEmery.length+dmDeniz.length;
-    const uniqueDMEmery=uniqueDMCount(dmEmery), uniqueDMDeniz=uniqueDMCount(dmDeniz);
-    const uniqueTotalDM=uniqueDMCount([...dmEmery,...dmDeniz]);
+    const totalSet=emerySet.length;
+    const totalDM=dmEmery.length;
+    const uniqueDMEmery=uniqueDMCount(dmEmery);
+    const uniqueTotalDM=uniqueDMEmery;
     const settingRate=uniqueTotalDM>0?totalSet/uniqueTotalDM:0;
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
-    const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
+    const closeList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed:(r[L.endInSale]||'No').trim()}));
+  const grossList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
+  const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
     const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList,
-      settingData:{emerySet:emerySet.length,denizSet:denizSet.length,dmEmery:dmEmery.length,dmDeniz:dmDeniz.length,totalSet,totalDM,uniqueDMEmery,uniqueDMDeniz,uniqueTotalDM} };
+      settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM} };
   } else if (type==='closer') {
     const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); const st=(r[L.callStatus]||'').trim(); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name&&st!=='Confirmed'; });
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
@@ -1022,6 +1038,56 @@ function navigateScorecard(dir) {
   }
 }
 
+
+function navigateCloser(dir) {
+  if (closerDateMode==='week') {
+    const d = _pickerDates['closer-week']; if(!d) return;
+    const nd = addDays(d, dir*7);
+    _pickerDates['closer-week'] = nd;
+    const inp = document.getElementById('dinput-closer-week');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderCloserIndiv();
+  } else if (closerDateMode==='month') {
+    const v=document.getElementById('closer-month').value; if(!v) return;
+    const [yr,mo]=v.split('-').map(Number);
+    const nd=new Date(yr,mo-1+dir,1);
+    document.getElementById('closer-month').value=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+    if(document.getElementById('closer-view-comparison').classList.contains('active')) renderCloserComp();
+    else renderCloserIndiv();
+  } else {
+    const d = _pickerDates['closer-day']; if(!d) return;
+    const nd = addDays(d, dir);
+    _pickerDates['closer-day'] = nd;
+    const inp = document.getElementById('dinput-closer-day');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderCloserIndiv();
+  }
+}
+
+function navigateSetter(dir) {
+  if (setterDateMode==='week') {
+    const d = _pickerDates['setter-week']; if(!d) return;
+    const nd = addDays(d, dir*7);
+    _pickerDates['setter-week'] = nd;
+    const inp = document.getElementById('dinput-setter-week');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderSetterIndiv();
+  } else if (setterDateMode==='month') {
+    const v=document.getElementById('setter-month').value; if(!v) return;
+    const [yr,mo]=v.split('-').map(Number);
+    const nd=new Date(yr,mo-1+dir,1);
+    document.getElementById('setter-month').value=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
+    if(document.getElementById('setter-view-comparison').classList.contains('active')) renderSetterComp();
+    else renderSetterIndiv();
+  } else {
+    const d = _pickerDates['setter-day']; if(!d) return;
+    const nd = addDays(d, dir);
+    _pickerDates['setter-day'] = nd;
+    const inp = document.getElementById('dinput-setter-day');
+    if(inp) inp.value = fmtDateAmerican(nd);
+    renderSetterIndiv();
+  }
+}
 function renderScorecard() {
   if (!leadsRaw.length) return;
   const range = getScorecardRange();
@@ -1042,8 +1108,8 @@ function renderScorecard() {
     {key:'callsBooked',  name:'Calls Booked',      val:w.callsBooked,    fmt:v=>v,   thresh:'Red < 17  ·  Green 17–19  ·  Amazing 20+',       type:'volume',panel:'panel-calls'},
     {key:'qualShows',    name:'Qualified Shows',    val:w.qualShows,      fmt:v=>v,   thresh:'Red < 12  ·  Green 12–14  ·  Amazing 15+',       type:'volume',panel:'panel-shows'},
     {key:'newContracts', name:'New Contracts',      val:w.newContracts,   fmt:v=>v,   thresh:'Red < 3  ·  Green 3–4  ·  Amazing 5+',           type:'volume',panel:'panel-contracts'},
-    {key:'closeRate',    name:'Close Rate',         val:w.closeRate,      fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',    type:'chart'},
-    {key:'grossShowRate',name:'Gross Show Rate',    val:w.grossShowRate,  fmt:pct,    thresh:'Red < 65%  ·  Green 65–74%  ·  Amazing 75%+',    type:'chart'},
+    {key:'closeRate',    name:'Close Rate',         val:w.closeRate,      fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',    type:'volume',panel:'panel-close'},
+    {key:'grossShowRate',name:'Gross Show Rate',    val:w.grossShowRate,  fmt:pct,    thresh:'Red < 65%  ·  Green 65–74%  ·  Amazing 75%+',    type:'volume',panel:'panel-gross'},
     {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2.3%  ·  Green 2.3–2.9%  ·  Amazing 3%+', type:'volume',panel:'panel-setting'},
   ];
 
@@ -1498,7 +1564,7 @@ function renderSetterComp() {
   document.getElementById('setter-comp-period').textContent = range.label;
 
   const emeryData = calcRange(range.start, range.end, 'Emery', 'setter');
-  const denizData = calcRange(range.start, range.end, 'Deniz', 'setter');
+
 
   const endDate = range.end;
   const daysInMonth=new Date(endDate.getFullYear(),endDate.getMonth()+1,0).getDate();
@@ -1507,19 +1573,15 @@ function renderSetterComp() {
 
   const rows=[
     {label:'Setting Rate', sub:'Red < 2.3%  ·  Green 2.3%+  ·  Amazing 3%+',
-      emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)},
-      deniz:{v:denizData.settingRate, fmt:pct1, c:cat('settingRate',denizData.settingRate)}},
+      emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)}},
     {label:'Calls Set', sub:'Total in period',
-      emery:{v:emeryData.callsSet, fmt:v=>v, c:'neutral'},
-      deniz:{v:denizData.callsSet, fmt:v=>v, c:'neutral'}},
-    {label:'Qual. Shows MTD', sub:'Target: Emery 30 · Deniz 10',
-      emery:{v:emeryData.qualMTD, fmt:v=>v+' / 30', c:paceCat(emeryData.qualMTD,30)},
-      deniz:{v:denizData.qualMTD, fmt:v=>v+' / 10', c:paceCat(denizData.qualMTD,10)}},
+      emery:{v:emeryData.callsSet, fmt:v=>v, c:'neutral'}},
+    {label:'Qual. Shows MTD', sub:'Target: 30 / month',
+      emery:{v:emeryData.qualMTD, fmt:v=>v+' / 30', c:paceCat(emeryData.qualMTD,30)}},
   ];
   document.getElementById('setter-comp-body').innerHTML=rows.map(r=>`<tr>
     <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
     ${compCell(r.emery.v, r.emery.fmt, r.emery.c, null)}
-    ${compCell(r.deniz.v, r.deniz.fmt, r.deniz.c, null)}
   </tr>`).join('');
 }
 
@@ -1593,7 +1655,7 @@ function openVolumePanel(panelId,key,w,rect) {
   if(key==='settingRate'){
     const sd=w.settingData;
     document.getElementById('summary-setting').innerHTML=[
-      {n:sd.emerySet,l:'Emery Set'},{n:sd.denizSet,l:'Deniz Set'},
+      {n:sd.emerySet,l:'Emery Set'},
       {n:`${sd.uniqueTotalDM} <span style="font-size:10px;color:var(--text-faint)">(${sd.totalDM} raw)</span>`,l:'Unique Leads'},{n:pct1(w.settingRate),l:'Dept Rate'}
     ].map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
     const d=document.getElementById('def-setting'); if(d)d.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
@@ -1605,10 +1667,32 @@ function openVolumePanel(panelId,key,w,rect) {
   let leads,stats;
   if(key==='callsBooked'){leads=w.callsList;const e=leads.filter(l=>l.source==='Emery').length,ch=leads.filter(l=>l.source==='21 Day Challenge').length,i=leads.length-e-ch;stats=[{n:e,l:'Emery'},{n:ch,l:'Challenge'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
   else if(key==='qualShows'){leads=w.showsList;const e=leads.filter(l=>l.source==='Emery').length,i=leads.length-e;stats=[{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
-  else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product}));const d=w.contractsList.filter(l=>l.closer==='Deniz').length,j=w.contractsList.filter(l=>l.closer==='Dr. Joey').length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];}
+  else if(key==='closeRate'){
+    leads=w.closeList.map(l=>({name:l.name,source:l.closer,closed:l.closed}));
+    const closed=leads.filter(l=>l.closed==='Yes').length,missed=leads.length-closed;
+    stats=[{n:closed,l:'Closed'},{n:missed,l:'Not Closed'},{n:leads.length,l:'Total Shows'}];
+  } else if(key==='grossShowRate'){
+    leads=w.grossList;
+    const sh=leads.filter(l=>['Showed','Follow Up','Disqualified on sales call'].includes(l.status)).length;
+    const noshow=leads.filter(l=>l.status==='No Show').length;
+    const canc=leads.filter(l=>l.status==='Cancelled').length;
+    stats=[{n:sh,l:'Showed'},{n:noshow,l:'No Show'},{n:canc,l:'Cancelled'},{n:leads.length,l:'Total'}];
+  } else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product}));const d=w.contractsList.filter(l=>l.closer==='Deniz').length,j=w.contractsList.filter(l=>l.closer==='Dr. Joey').length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];}
   listEl.innerHTML=leads.map(l=>{
     let lbl,cls;
-    if(key==='newContracts'){lbl=l.source==='Dr. Joey'?'Joey':l.source||'—';cls=l.source==='Dr. Joey'?'src-joey':'src-deniz';}
+    if(key==='closeRate'){
+      const closerLbl=l.source==='Dr. Joey'?'Joey':l.source||'—';
+      const closerCls=l.source==='Dr. Joey'?'src-joey':'src-deniz';
+      const closedTag=l.closed==='Yes'
+        ?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#D4F5E5;color:#1A6B45;border:1px solid #8FDCBA;font-weight:600;margin-left:4px;">Closed</span>`
+        :`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Not Closed</span>`;
+      return `<div class="lead-row"><span class="lead-name">${l.name}${closedTag}</span><span class="lead-source ${closerCls}">${closerLbl}</span></div>`;
+    } else if(key==='grossShowRate'){
+      const st=l.status||'—';
+      const showed=['Showed','Follow Up','Disqualified on sales call'].includes(st);
+      const stCls=showed?'src-emery':st==='No Show'?'src-challenge':'src-cancelled';
+      return `<div class="lead-row"><span class="lead-name">${l.name}</span><span class="lead-source ${stCls}">${st}</span></div>`;
+    } else if(key==='newContracts'){lbl=l.source==='Dr. Joey'?'Joey':l.source||'—';cls=l.source==='Dr. Joey'?'src-joey':'src-deniz';}
     else{const iE=l.source==='Emery',iCh=(l.source||'').includes('Challenge');lbl=iE?'Emery':iCh?'Challenge':'Inbound';cls=iE?'src-emery':iCh?'src-challenge':'src-inbound';}
     const fuTag=key==='qualShows'&&l.status==='Follow Up'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`:'';
     const prodTag=key==='newContracts'&&l.product?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`:'';
