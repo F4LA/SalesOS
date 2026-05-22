@@ -94,6 +94,18 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .metric-hint { font-size: 11px; color: var(--steel-400); margin-top: 10px; display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity 0.2s; font-weight: 500; }
 .metric-card:hover .metric-hint { opacity: 1; }
 
+
+/* PANEL RESIZE */
+.floating-panel { overflow: visible !important; }
+.panel-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 18px; height: 18px; cursor: se-resize;
+  display: flex; align-items: flex-end; justify-content: flex-end;
+  padding: 3px; box-sizing: border-box; z-index: 10;
+}
+.panel-resize-handle svg { opacity: 0.25; transition: opacity 0.15s; }
+.floating-panel:hover .panel-resize-handle svg { opacity: 0.55; }
+
 /* FLOATING PANELS */
 .floating-panel { position: fixed; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 280px; max-width: 340px; z-index: 500; box-shadow: 0 12px 40px rgba(8,13,26,0.14), 0 2px 8px rgba(8,13,26,0.06); display: none; animation: panelIn 0.15s ease; overflow: hidden; }
 @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -309,35 +321,31 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 <!-- PANELS -->
 <div class="floating-panel" id="panel-calls">
   <div class="panel-header"><span class="panel-title">Calls Booked · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body"><div class="lead-list" id="list-calls"></div><div class="panel-summary" id="summary-calls"></div><div id="def-calls" class="panel-definition"></div></div>
+  <div class="panel-body"><div class="lead-list" id="list-calls"></div><div class="panel-summary" id="summary-calls"></div><div id="def-calls" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-shows">
   <div class="panel-header"><span class="panel-title">Qualified Shows · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body"><div class="lead-list" id="list-shows"></div><div class="panel-summary" id="summary-shows"></div><div id="def-shows" class="panel-definition"></div></div>
+  <div class="panel-body"><div class="lead-list" id="list-shows"></div><div class="panel-summary" id="summary-shows"></div><div id="def-shows" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-contracts">
   <div class="panel-header"><span class="panel-title">New Contracts · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body"><div class="lead-list" id="list-contracts"></div><div class="panel-summary" id="summary-contracts"></div><div id="def-contracts" class="panel-definition"></div></div>
+  <div class="panel-body"><div class="lead-list" id="list-contracts"></div><div class="panel-summary" id="summary-contracts"></div><div id="def-contracts" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-close">
   <div class="panel-header"><span class="panel-title">Close Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-summary" id="summary-close"></div>
-  <div class="panel-list" id="list-close"></div>
-  <div class="panel-def" id="def-close"></div>
+  <div class="panel-body"><div class="lead-list" id="list-close"></div><div class="panel-summary" id="summary-close"></div><div id="def-close" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-gross">
   <div class="panel-header"><span class="panel-title">Gross Show Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-summary" id="summary-gross"></div>
-  <div class="panel-list" id="list-gross"></div>
-  <div class="panel-def" id="def-gross"></div>
+  <div class="panel-body"><div class="lead-list" id="list-gross"></div><div class="panel-summary" id="summary-gross"></div><div id="def-gross" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-setting">
   <div class="panel-header"><span class="panel-title">Setting Rate · This Week</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body"><div class="panel-summary" id="summary-setting" style="margin-top:0;padding-top:0;border-top:none;"></div><div id="def-setting" class="panel-definition"></div></div>
+  <div class="panel-body"><div class="panel-summary" id="summary-setting" style="margin-top:0;padding-top:0;border-top:none;"></div><div id="def-setting" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 <div class="floating-panel" id="panel-chart" style="min-width:320px;">
   <div class="panel-header"><span class="panel-title" id="panel-chart-title">Trend · Last 8 Weeks</span><button class="panel-close" onclick="closeAllPanels()">✕</button></div>
-  <div class="panel-body"><div class="chart-panel-wrap"><canvas id="trendChart"></canvas></div><div id="def-chart" class="panel-definition"></div></div>
+  <div class="panel-body"><div class="chart-panel-wrap"><canvas id="trendChart"></canvas></div><div id="def-chart" class="panel-definition"></div></div><div class="panel-resize-handle" onmousedown="startPanelResize(event)"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M9 1L1 9M9 5L5 9M9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
 </div>
 
 <!-- HEADER -->
@@ -867,7 +875,7 @@ function calcRange(start, end, name, type) {
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
     const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
-      callsList, showsList, contractsList,
+      callsList, showsList, contractsList, closeList, grossList,
       settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM} };
   } else if (type==='closer') {
     const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); const st=(r[L.callStatus]||'').trim(); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name&&st!=='Confirmed'; });
@@ -1719,6 +1727,28 @@ function openChartPanel(key,rect) {
   },50);
 }
 
+
+// ─── PANEL RESIZE ─────────────────────────────────────────────────────────────
+function startPanelResize(e) {
+  e.preventDefault(); e.stopPropagation();
+  const panel = e.currentTarget.closest('.floating-panel');
+  if (!panel) return;
+  const startX = e.clientX, startY = e.clientY;
+  const startW = panel.offsetWidth, startH = panel.offsetHeight;
+  function onMove(ev) {
+    const newW = Math.max(280, startW + ev.clientX - startX);
+    const newH = Math.max(200, startH + ev.clientY - startY);
+    panel.style.width  = newW + 'px';
+    panel.style.maxWidth = newW + 'px';
+    panel.style.height = newH + 'px';
+    // Make lead-list fill available space
+    const list = panel.querySelector('.lead-list');
+    if (list) list.style.maxHeight = (newH - 150) + 'px';
+  }
+  function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
 function positionAndShow(panel,rect) {
   panel.classList.add('active');
   document.getElementById('overlay').classList.add('active');
