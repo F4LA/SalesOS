@@ -96,7 +96,12 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 
 
 /* PANEL RESIZE */
-.floating-panel { overflow: visible !important; }
+/* panel overflow managed per-element */
+
+/* PANEL DRAG */
+.panel-header { cursor: grab; }
+.panel-header:active { cursor: grabbing; }
+
 .panel-resize-handle {
   position: absolute; bottom: 0; right: 0;
   width: 18px; height: 18px; cursor: se-resize;
@@ -107,14 +112,14 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .floating-panel:hover .panel-resize-handle svg { opacity: 0.55; }
 
 /* FLOATING PANELS */
-.floating-panel { position: fixed; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 280px; max-width: 340px; z-index: 500; box-shadow: 0 12px 40px rgba(8,13,26,0.14), 0 2px 8px rgba(8,13,26,0.06); display: none; animation: panelIn 0.15s ease; overflow: hidden; }
+.floating-panel { position: fixed; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 280px; max-width: 340px; z-index: 500; box-shadow: 0 12px 40px rgba(8,13,26,0.14), 0 2px 8px rgba(8,13,26,0.06); display: none; animation: panelIn 0.15s ease; overflow: visible; }
 @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .floating-panel.active { display: block; }
 .panel-header { background: var(--navy-900); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
 .panel-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
 .panel-close { background: none; border: none; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; transition: color 0.15s; }
 .panel-close:hover { color: rgba(255,255,255,0.8); }
-.panel-body { padding: 14px 16px; }
+.panel-body { padding: 14px 16px; overflow: hidden; }
 .lead-list { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
 .lead-list::-webkit-scrollbar { width: 4px; }
 .lead-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -132,7 +137,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .sum-num { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--text-primary); line-height: 1; }
 .sum-lbl { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
 .chart-panel-wrap { height: 140px; }
-.panel-definition { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.panel-definition { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); line-height: 1.6; overflow-wrap: break-word; }
 .panel-definition strong { color: var(--text-body); font-weight: 600; }
 .def-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--steel-400); margin-bottom: 6px; display: block; }
 
@@ -775,9 +780,11 @@ function calcWeek(ws) {
   const wsD = new Date(ws); wsD.setHours(0,0,0,0);
 
   const happened = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,wsD,we); });
-  const completed = happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
-  const showed = happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
-  const qual = happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+  // ocurred: calls that already took place (col K = call date), excludes Confirmed/future
+  const ocurred = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,wsD,we)&&(r[L.callStatus]||'').trim()!=='Confirmed'; });
+  const completed = ocurred.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+  const showed = ocurred.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+  const qual = ocurred.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
   const contracts = clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,wsD,we)&&(r[C.newOrResign]||'').trim().toLowerCase()==='new'; });
   const cancelled = completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
   const netDenom = completed.length - cancelled.length;
@@ -800,7 +807,7 @@ function calcWeek(ws) {
   const emeryQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Emery'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
 
   function closerStats(name) {
-    const cc=happened.filter(r=>(r[L.salesCallWith]||'').trim()===name);
+    const cc=ocurred.filter(r=>(r[L.salesCallWith]||'').trim()===name);
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
     const sh=cc.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
     const q=cc.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
@@ -830,8 +837,13 @@ function calcWeek(ws) {
   }
 
   const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
-  const closeList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed:(r[L.endInSale]||'No').trim()}));
-  const grossList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
+  const closeList=qual.map(r=>{
+    const sale=(r[L.endInSale]||'').trim();
+    const st=(r[L.callStatus]||'').trim();
+    const closed=sale==='Yes'?'Yes':sale==='No'?'No':st==='Follow Up'?'Follow Up':'Pending';
+    return {name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed};
+  });
+  const grossList=ocurred.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
   const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
 
@@ -853,9 +865,10 @@ function calcRange(start, end, name, type) {
   if (type==='scorecard') {
     // Full department scorecard for arbitrary range
     const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e); });
-    const completed=happened.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
-    const showed=happened.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
-    const qual=happened.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
+    const ocurred=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.callStatus]||'').trim()!=='Confirmed'; });
+    const completed=ocurred.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
+    const showed=ocurred.filter(r=>SHOWED.has((r[L.callStatus]||'').trim()));
+    const qual=ocurred.filter(r=>QUAL.has((r[L.callStatus]||'').trim()));
     const contracts=clientRaw.filter(r=>{ const d=parseDate(r[C.datePurchased]); return d&&inRange(d,s,e)&&(r[C.newOrResign]||'').trim().toLowerCase()==='new'; });
     const cancelled=completed.filter(r=>(r[L.callStatus]||'').trim()==='Cancelled');
     const netDenom=completed.length-cancelled.length;
@@ -870,8 +883,13 @@ function calcRange(start, end, name, type) {
     const uniqueTotalDM=uniqueDMEmery;
     const settingRate=uniqueTotalDM>0?totalSet/uniqueTotalDM:0;
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
-    const closeList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed:(r[L.endInSale]||'No').trim()}));
-  const grossList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
+    const closeList=qual.map(r=>{
+      const sale=(r[L.endInSale]||'').trim();
+      const st=(r[L.callStatus]||'').trim();
+      const closed=sale==='Yes'?'Yes':sale==='No'?'No':st==='Follow Up'?'Follow Up':'Pending';
+      return {name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:(r[L.salesCallWith]||'—').trim(),closed};
+    });
+  const grossList=ocurred.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
     const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
@@ -1677,8 +1695,11 @@ function openVolumePanel(panelId,key,w,rect) {
   else if(key==='qualShows'){leads=w.showsList;const e=leads.filter(l=>l.source==='Emery').length,i=leads.length-e;stats=[{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
   else if(key==='closeRate'){
     leads=w.closeList.map(l=>({name:l.name,source:l.closer,closed:l.closed}));
-    const closed=leads.filter(l=>l.closed==='Yes').length,missed=leads.length-closed;
-    stats=[{n:closed,l:'Closed'},{n:missed,l:'Not Closed'},{n:leads.length,l:'Total Shows'}];
+    const closed=leads.filter(l=>l.closed==='Yes').length;
+    const notClosed=leads.filter(l=>l.closed==='No').length;
+    const followUp=leads.filter(l=>l.closed==='Follow Up').length;
+    const pending=leads.filter(l=>l.closed==='Pending').length;
+    stats=[{n:closed,l:'Closed'},{n:notClosed,l:'Not Closed'},{n:followUp,l:'Follow Up'},{n:leads.length,l:'Total Shows'}];
   } else if(key==='grossShowRate'){
     leads=w.grossList;
     const sh=leads.filter(l=>['Showed','Follow Up','Disqualified on sales call'].includes(l.status)).length;
@@ -1693,6 +1714,10 @@ function openVolumePanel(panelId,key,w,rect) {
       const closerCls=l.source==='Dr. Joey'?'src-joey':'src-deniz';
       const closedTag=l.closed==='Yes'
         ?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#D4F5E5;color:#1A6B45;border:1px solid #8FDCBA;font-weight:600;margin-left:4px;">Closed</span>`
+        :l.closed==='Follow Up'
+        ?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`
+        :l.closed==='Pending'
+        ?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FEF3E2;color:#B45309;border:1px solid #F4C17A;font-weight:600;margin-left:4px;">Pending</span>`
         :`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Not Closed</span>`;
       return `<div class="lead-row"><span class="lead-name">${l.name}${closedTag}</span><span class="lead-source ${closerCls}">${closerLbl}</span></div>`;
     } else if(key==='grossShowRate'){
@@ -1729,6 +1754,29 @@ function openChartPanel(key,rect) {
 
 
 // ─── PANEL RESIZE ─────────────────────────────────────────────────────────────
+
+// ─── PANEL DRAG ───────────────────────────────────────────────────────────────
+function initPanelDrag() {
+  document.querySelectorAll('.floating-panel').forEach(panel => {
+    const header = panel.querySelector('.panel-header');
+    if (!header || header._dragBound) return;
+    header._dragBound = true;
+    header.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.panel-close')) return;
+      e.preventDefault();
+      const startX = e.clientX, startY = e.clientY;
+      const startL = parseInt(panel.style.left)||panel.getBoundingClientRect().left;
+      const startT = parseInt(panel.style.top)||panel.getBoundingClientRect().top;
+      function onMove(ev) {
+        panel.style.left = (startL + ev.clientX - startX) + 'px';
+        panel.style.top  = (startT + ev.clientY - startY) + 'px';
+      }
+      function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
 function startPanelResize(e) {
   e.preventDefault(); e.stopPropagation();
   const panel = e.currentTarget.closest('.floating-panel');
@@ -1750,6 +1798,7 @@ function startPanelResize(e) {
   document.addEventListener('mouseup', onUp);
 }
 function positionAndShow(panel,rect) {
+  initPanelDrag();
   panel.classList.add('active');
   document.getElementById('overlay').classList.add('active');
   const pw=340, ph=360;
