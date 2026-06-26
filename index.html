@@ -845,9 +845,10 @@ function calcWeek(ws) {
   });
   const grossList=ocurred.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-  const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
+  const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim()),refund:String(r[C.refund]||'').trim().toUpperCase()==='TRUE'}));
+  const newContractsNet=contractsList.filter(c=>!c.refund).length;
 
-  return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:contracts.length,
+  return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:newContractsNet,
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
     setter:{
       emery:{rate:uniqueDMEmery>0?emerySet.length/uniqueDMEmery:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:uniqueDMEmery, dmLeadsRaw:dmEmery.length},
@@ -891,8 +892,9 @@ function calcRange(start, end, name, type) {
     });
   const grossList=ocurred.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'—').trim()}));
   const showsList=qual.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim(),status:(r[L.callStatus]||'').trim()}));
-    const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim())}));
-    return { callsBooked:happened.length, qualShows:qual.length, newContracts:contracts.length, grossShowRate, closeRate, settingRate,
+    const contractsList=contracts.map(r=>({name:[(r[C.firstName]||'').trim(),(r[C.lastName]||'').trim()].filter(Boolean).join(' ')||'—',closer:normalizeCloser((r[C.salesPerson]||'').trim()),product:normalizeProduct((r[C.product]||'').trim()),refund:String(r[C.refund]||'').trim().toUpperCase()==='TRUE'}));
+    const newContractsNet=contractsList.filter(c=>!c.refund).length;
+    return { callsBooked:happened.length, qualShows:qual.length, newContracts:newContractsNet, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList, closeList, grossList,
       settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM} };
   } else if (type==='closer') {
@@ -1707,7 +1709,7 @@ function openVolumePanel(panelId,key,w,rect) {
     const noshow=leads.filter(l=>l.status==='No Show').length;
     const canc=leads.filter(l=>l.status==='Cancelled').length;
     stats=[{n:sh,l:'Showed'},{n:noshow,l:'No Show'},{n:canc,l:'Cancelled'},{n:leads.length,l:'Total'}];
-  } else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product}));const d=w.contractsList.filter(l=>l.closer==='Deniz').length,j=w.contractsList.filter(l=>l.closer==='Dr. Joey').length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:leads.length,l:'Total'}];}
+  } else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product,refund:l.refund}));const net=w.contractsList.filter(l=>!l.refund);const d=net.filter(l=>l.closer==='Deniz').length,j=net.filter(l=>l.closer==='Dr. Joey').length,ref=w.contractsList.filter(l=>l.refund).length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:ref,l:'Refunds'},{n:net.length,l:'Total'}];}
   listEl.innerHTML=leads.map(l=>{
     let lbl,cls;
     if(key==='closeRate'){
@@ -1730,7 +1732,10 @@ function openVolumePanel(panelId,key,w,rect) {
     else{const iE=l.source==='Emery',iCh=(l.source||'').includes('Challenge');lbl=iE?'Emery':iCh?'Challenge':'Inbound';cls=iE?'src-emery':iCh?'src-challenge':'src-inbound';}
     const fuTag=key==='qualShows'&&l.status==='Follow Up'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`:'';
     const prodTag=key==='newContracts'&&l.product?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`:'';
-    return `<div class="lead-row"><span class="lead-name">${l.name}${fuTag}${prodTag}</span><span class="lead-source ${cls}">${lbl}</span></div>`;
+    const refTag=key==='newContracts'&&l.refund?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Refund</span>`:'';
+    const nameSty=key==='newContracts'&&l.refund?'text-decoration:line-through;color:var(--text-faint);':'';
+    const srcSty=key==='newContracts'&&l.refund?'opacity:0.5;':'';
+    return `<div class="lead-row"><span class="lead-name" style="${nameSty}">${l.name}${fuTag}${prodTag}${refTag}</span><span class="lead-source ${cls}" style="${srcSty}">${lbl}</span></div>`;
   }).join('')||'<div style="color:var(--text-faint);font-size:12px;padding:8px 0;">No data</div>';
   sumEl.innerHTML=stats.map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
   const def=document.getElementById('def-'+suffix); if(def&&DEFS[key])def.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
