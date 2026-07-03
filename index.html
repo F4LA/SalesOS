@@ -974,8 +974,9 @@ function calcRange(start, end, name, type) {
     const qualMTDLeads=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,e)&&(r[L.source]||'').trim()===name&&QUAL.has((r[L.callStatus]||'').trim()); });
     const qualMTD=qualMTDLeads.length;
     const qualMTDList=qualMTDLeads.map(r=>{const cd=parseDate(r[L.salesCallBookedDate]);return{name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim(),inWeek:!!(cd&&inRange(cd,s,e))};});
+    const netShowList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim()}));
     const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
-    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, qualMTDList, breakdown };
+    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, qualMTDList, netShowList, breakdown };
   }
 }
 
@@ -1488,6 +1489,7 @@ function renderSetterIndiv() {
   // Store breakdown for panel access
   window._setterBreakdown = d.breakdown;
   window._setterQualMTD = d.qualMTDList;
+  window._setterNetShow = d.netShowList;
   window._setterWeekLabel = range.label;
 
   const cards = [
@@ -1886,8 +1888,9 @@ function openIndivPanel(panelKey, e) {
     const showed = breakdown.filter(r=>['Showed','Follow Up','Disqualified on sales call'].includes(r.status));
     leads = showed.map(r => ({name:r.name, source:r.status==='Follow Up'?'Follow Up':r.status==='Disqualified on sales call'?'DQ':'Showed', cls:statusClass(r.status)}));
     const canc = breakdown.filter(r=>r.status==='Cancelled').length;
+    const noshow = breakdown.filter(r=>r.status==='No Show').length;
     const comp = breakdown.filter(r=>['Showed','Follow Up','Cancelled','No Show','Disqualified on sales call'].includes(r.status)).length;
-    stats = [{n:showed.length,l:'Showed'},{n:canc,l:'Cancelled'},{n:comp-canc,l:'Net Denom'}];
+    stats = [{n:showed.length,l:'Showed'},{n:noshow,l:'No Show'},{n:canc,l:'Cancelled'},{n:comp-canc,l:'Net Denom'}];
 
   } else if (panelKey === 'setter-calls') {
     title = 'Calls Set';
@@ -1912,13 +1915,14 @@ function openIndivPanel(panelKey, e) {
 
   } else if (panelKey === 'setter-netshow') {
     title = 'Net Show Rate';
+    const rows = window._setterNetShow || [];
     const showedSet = ['Showed','Follow Up','Disqualified on sales call'];
     const compSet   = ['Showed','Follow Up','Disqualified on sales call','Cancelled','No Show'];
-    const showed = setterBreakdown.filter(r=>showedSet.includes(r.status));
-    const canc   = setterBreakdown.filter(r=>r.status==='Cancelled');
-    const noshow = setterBreakdown.filter(r=>r.status==='No Show');
-    const comp   = setterBreakdown.filter(r=>compSet.includes(r.status)).length;
-    leads = setterBreakdown.filter(r=>compSet.includes(r.status))
+    const showed = rows.filter(r=>showedSet.includes(r.status));
+    const noshow = rows.filter(r=>r.status==='No Show');
+    const canc   = rows.filter(r=>r.status==='Cancelled');
+    const comp   = rows.filter(r=>compSet.includes(r.status)).length;
+    leads = rows.filter(r=>compSet.includes(r.status))
       .map(r => ({name:r.name, source:r.status, cls:statusClass(r.status)}));
     stats = [{n:showed.length,l:'Showed'},{n:noshow.length,l:'No Show'},{n:canc.length,l:'Cancelled'},{n:comp-canc.length,l:'Net Denom'}];
   }
