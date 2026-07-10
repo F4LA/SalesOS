@@ -958,7 +958,7 @@ function calcRange(start, end, name, type) {
         refund: match.refund
       };
     });
-    return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, closeRate:q.length>0?ct.length/q.length:0, avgCash, showed:sh.length, contracts:ct.length, qual:q.length, breakdown };
+    return { calls:cc.length, cancelled:canc.length, grossSR:comp.length>0?sh.length/comp.length:0, netSR:nd>0?sh.length/nd:0, netDenom:nd, closeRate:q.length>0?ct.length/q.length:0, avgCash, showed:sh.length, contracts:ct.length, qual:q.length, breakdown };
   } else {
     const dmLeadsRaw=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
     const dmLeadsUnique=uniqueDMCount(dmLeadsRaw);
@@ -976,7 +976,7 @@ function calcRange(start, end, name, type) {
     const qualMTDList=qualMTDLeads.map(r=>{const cd=parseDate(r[L.salesCallBookedDate]);return{name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim(),inWeek:!!(cd&&inRange(cd,s,e))};});
     const netShowList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim()}));
     const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
-    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, qualPeriod:q.length, qualMTD, qualMTDList, netShowList, breakdown };
+    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, netDenom:nd, qualPeriod:q.length, qualMTD, qualMTDList, netShowList, breakdown };
   }
 }
 
@@ -1078,6 +1078,8 @@ function navigateCloser(dir) {
     _pickerDates['closer-week'] = nd;
     const inp = document.getElementById('dinput-closer-week');
     if(inp) inp.value = fmtDateAmerican(nd);
+    const endEl = document.getElementById('closer-week-end-display');
+    if(endEl) endEl.textContent = fmtDateAmerican(addDays(nd,6));
     renderCloserIndiv();
   } else if (closerDateMode==='month') {
     const v=document.getElementById('closer-month').value; if(!v) return;
@@ -1103,6 +1105,8 @@ function navigateSetter(dir) {
     _pickerDates['setter-week'] = nd;
     const inp = document.getElementById('dinput-setter-week');
     if(inp) inp.value = fmtDateAmerican(nd);
+    const endEl = document.getElementById('setter-week-end-display');
+    if(endEl) endEl.textContent = fmtDateAmerican(addDays(nd,6));
     renderSetterIndiv();
   } else if (setterDateMode==='month') {
     const v=document.getElementById('setter-month').value; if(!v) return;
@@ -1398,9 +1402,11 @@ function renderCloserIndiv() {
   const cancelPct = d.calls>0 ? d.cancelled/d.calls : 0;
   const cancelPctStr = pct(cancelPct);       // e.g. "18%"
   const cancelNum = d.cancelled;             // e.g. 5
-  const netSRPctStr = pct(d.netSR);          // e.g. "94%"
+  const hasShowData = d.netDenom>0;
+  const hasCloseData = d.qual>0;
+  const netSRPctStr = hasShowData ? pct(d.netSR) : '\u2014';
   const netSRNum = d.showed;                 // e.g. 15 (showed count)
-  const closeRatePctStr = pct(d.closeRate);  // e.g. "40%"
+  const closeRatePctStr = hasCloseData ? pct(d.closeRate) : '\u2014';
   const closeRateNum = d.contracts;          // e.g. 6
 
   const cCancelMode = closerToggle.cancelled;
@@ -1429,7 +1435,7 @@ function renderCloserIndiv() {
     ),
     makeIndivCard(
       'Net Show Rate', 'Red < 80%  ·  Green 80%+',
-      d.netSR>=0.80?'green':'red',
+      !hasShowData?'neutral':d.netSR>=0.80?'green':'red',
       cNetMode==='pct' ? netSRPctStr : netSRNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.netShow='${cNetMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
       `openIndivPanel('closer-shows', event)`,
@@ -1437,7 +1443,7 @@ function renderCloserIndiv() {
     ),
     makeIndivCard(
       'Close Rate', 'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',
-      d.closeRate>=0.45?'gold':d.closeRate>=0.35?'green':'red',
+      !hasCloseData?'neutral':d.closeRate>=0.45?'gold':d.closeRate>=0.35?'green':'red',
       cCloseMode==='pct' ? closeRatePctStr : closeRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();closerToggle.closeRate='${cCloseMode==='pct'?'num':'pct'}';renderCloserIndiv()">${cCloseMode==='pct'?`# ${closeRateNum}`:`% ${closeRatePctStr}`}</button>`,
       `openIndivPanel('closer-contracts', event)`,
@@ -1479,7 +1485,8 @@ function renderSetterIndiv() {
   const cancelNum    = d.cancelled;          // e.g. 3
   const sRatePctStr  = pct1(d.settingRate);  // e.g. "2.7%"
   const sRateNum     = d.callsSet;           // e.g. 14 (calls set)
-  const netSRPctStr  = pct(d.netSR);         // e.g. "94%"
+  const hasShowDataS = d.netDenom>0;
+  const netSRPctStr  = hasShowDataS ? pct(d.netSR) : '\u2014';
   const netSRNum     = d.qualPeriod;         // e.g. 12 (qual shows)
 
   const sCancelMode = setterToggle.cancelled;
@@ -1517,7 +1524,7 @@ function renderSetterIndiv() {
     ),
     makeIndivCard(
       'Net Show Rate', 'Red < 80%  ·  Green 80%+',
-      d.netSR>=0.80?'green':'red',
+      !hasShowDataS?'neutral':d.netSR>=0.80?'green':'red',
       sNetMode==='pct' ? netSRPctStr : netSRNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.netShow='${sNetMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sNetMode==='pct'?`# ${netSRNum}`:`% ${netSRPctStr}`}</button>`,
       `openIndivPanel('setter-netshow', event)`,
@@ -1844,9 +1851,10 @@ function openIndivPanel(panelKey, e) {
     title = 'Calls Booked';
     leads = breakdown.map(r => ({name:r.name, source:r.status, cls:statusClass(r.status)}));
     const showed = breakdown.filter(r=>['Showed','Follow Up'].includes(r.status)).length;
+    const dq = breakdown.filter(r=>r.status==='Disqualified on sales call').length;
     const canc = breakdown.filter(r=>r.status==='Cancelled').length;
     const noshow = breakdown.filter(r=>r.status==='No Show').length;
-    stats = [{n:showed,l:'Showed'},{n:canc,l:'Cancelled'},{n:noshow,l:'No Show'},{n:breakdown.length,l:'Total'}];
+    stats = [{n:showed,l:'Showed'},{n:dq,l:'DQ (attended)'},{n:noshow,l:'No Show'},{n:canc,l:'Cancelled'},{n:breakdown.length,l:'Total'}];
 
   } else if (panelKey === 'closer-cancelled') {
     title = 'Calls Cancelled';
@@ -2026,6 +2034,12 @@ async function init() {
   try {
     document.getElementById('loading-text').textContent='Loading Leads Applied...';
     leadsRaw=await fetchSheet(TAB_LEADS);
+    // Normalize known data-entry variants so a single typo can't silently drop a call
+    { const _sc={'showed':'Showed','follow up':'Follow Up','cancelled':'Cancelled','no show':'No Show','disqualified on sales call':'Disqualified on sales call','confirmed':'Confirmed'};
+      leadsRaw.forEach(r=>{
+        if(r&&r[11]){ const k=String(r[11]).trim().toLowerCase(); if(_sc[k]) r[11]=_sc[k]; }
+        if(r&&r[12]&&String(r[12]).trim().toLowerCase()==='joey') r[12]='Dr. Joey';
+      }); }
     document.getElementById('loading-text').textContent='Loading DM Tracking Index...';
     dmsRaw=await fetchSheet(TAB_DMS);
     document.getElementById('loading-text').textContent='Loading Client Mastersheet...';
