@@ -112,14 +112,16 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .floating-panel:hover .panel-resize-handle svg { opacity: 0.55; }
 
 /* FLOATING PANELS */
-.floating-panel { position: fixed; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 280px; max-width: 340px; z-index: 500; box-shadow: 0 12px 40px rgba(8,13,26,0.14), 0 2px 8px rgba(8,13,26,0.06); display: none; animation: panelIn 0.15s ease; overflow: visible; }
+.floating-panel { position: fixed; background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 280px; max-width: 340px; max-height: calc(100vh - 24px); z-index: 500; box-shadow: 0 12px 40px rgba(8,13,26,0.14), 0 2px 8px rgba(8,13,26,0.06); display: none; animation: panelIn 0.15s ease; overflow: hidden; }
 @keyframes panelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.floating-panel.active { display: block; }
-.panel-header { background: var(--navy-900); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.floating-panel.active { display: flex; flex-direction: column; }
+.panel-header { background: var(--navy-900); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
 .panel-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
 .panel-close { background: none; border: none; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; transition: color 0.15s; }
 .panel-close:hover { color: rgba(255,255,255,0.8); }
-.panel-body { padding: 14px 16px; overflow: hidden; }
+.panel-body { padding: 14px 16px; overflow-y: auto; overflow-x: hidden; min-height: 0; flex: 1 1 auto; }
+.panel-body::-webkit-scrollbar { width: 5px; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .lead-list { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
 .lead-list::-webkit-scrollbar { width: 4px; }
 .lead-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -658,7 +660,7 @@ const TAB_DMS    = 'DM TRACKING INDEX';
 const TAB_CLIENT = 'Client Mastersheet';
 
 const L = { firstName:0,lastName:1,email:2,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
-const D = { firstName:0, lastName:1, igHandle:2, newLeadTS:4, setter:7 };
+const D = { firstName:0, lastName:1, igHandle:2, newLeadTS:4, setter:7, typeOfLead:8 };
 
 // Returns unique lead count from a pre-filtered array of DM rows.
 // Identity key: IG Handle (col C) if present, else FirstName+LastName.
@@ -962,6 +964,9 @@ function calcRange(start, end, name, type) {
   } else {
     const dmLeadsRaw=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()===name; });
     const dmLeadsUnique=uniqueDMCount(dmLeadsRaw);
+    // New Leads: distinct people this setter received tagged "New lead" (col I) in the period.
+    const dmNewRows=dmLeadsRaw.filter(r=>(r[D.typeOfLead]||'').trim().toLowerCase()==='new lead');
+    const newLeads=uniqueDMCount(dmNewRows);
     const setLeads=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
     // Use happened (col K) for show/qual stats, setLeads for cancelled + breakdown (same universe)
     const happened=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()===name; });
@@ -976,13 +981,13 @@ function calcRange(start, end, name, type) {
     const qualMTDList=qualMTDLeads.map(r=>{const cd=parseDate(r[L.salesCallBookedDate]);return{name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim(),inWeek:!!(cd&&inRange(cd,s,e))};});
     const netShowList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',status:(r[L.callStatus]||'').trim()}));
     const breakdown=setLeads.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',setDate:r[L.callScheduledDate]||'',callDate:r[L.salesCallBookedDate]||'',status:(r[L.callStatus]||'').trim(),qualified:QUAL.has((r[L.callStatus]||'').trim())?'Yes':'—'}));
-    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, netDenom:nd, qualPeriod:q.length, qualMTD, qualMTDList, netShowList, breakdown };
+    return { dmLeads:dmLeadsUnique, dmLeadsRaw:dmLeadsRaw.length, newLeads, callsSet:setLeads.length, settingRate:dmLeadsUnique>0?setLeads.length/dmLeadsUnique:0, cancelled:cancSet.length, netSR:nd>0?sh.length/nd:0, netDenom:nd, qualPeriod:q.length, qualMTD, qualMTDList, netShowList, breakdown };
   }
 }
 
 // ─── THRESHOLDS ───────────────────────────────────────────────────────────────
 function cat(metric,val) {
-  const t={callsBooked:{r:17,a:20},qualShows:{r:12,a:15},newContracts:{r:3,a:5},closeRate:{r:0.35,a:0.45},grossShowRate:{r:0.65,a:0.75},settingRate:{r:0.023,a:0.030}}[metric];
+  const t={callsBooked:{r:17,a:20},qualShows:{r:12,a:15},newContracts:{r:3,a:5},closeRate:{r:0.35,a:0.45},grossShowRate:{r:0.65,a:0.75},settingRate:{r:0.02,a:0.025}}[metric];
   if(!t)return'green';
   if(t.a&&val>=t.a)return'gold';
   return val>=t.r?'green':'red';
@@ -1146,7 +1151,7 @@ function renderScorecard() {
     {key:'newContracts', name:'New Contracts',      val:w.newContracts,   fmt:v=>v,   thresh:'Red < 3  ·  Green 3–4  ·  Amazing 5+',           type:'volume',panel:'panel-contracts'},
     {key:'closeRate',    name:'Close Rate',         val:w.closeRate,      fmt:pct,    thresh:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',    type:'volume',panel:'panel-close'},
     {key:'grossShowRate',name:'Gross Show Rate',    val:w.grossShowRate,  fmt:pct,    thresh:'Red < 65%  ·  Green 65–74%  ·  Amazing 75%+',    type:'volume',panel:'panel-gross'},
-    {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2.3%  ·  Green 2.3–2.9%  ·  Amazing 3%+', type:'volume',panel:'panel-setting'},
+    {key:'settingRate',  name:'Setting Rate',       val:w.settingRate,    fmt:pct1,   thresh:'Red < 2%  ·  Green 2–2.4%  ·  Amazing 2.5%+', type:'volume',panel:'panel-setting'},
   ];
 
   let reds=0;
@@ -1501,17 +1506,22 @@ function renderSetterIndiv() {
 
   const cards = [
     makeIndivCard(
-      'Leads Received', 'Unique leads assigned in period',
-      'neutral', d.dmLeads, null, null,
-      `Unique leads assigned to this setter (${d.dmLeadsRaw||d.dmLeads} raw opt-ins, deduplicated by identity within the period).`
+      'Leads Received', 'All opt-ins you got this period',
+      'neutral', d.dmLeadsRaw, null, null,
+      `Every opt-in this setter got this period, repeats included. Different people: ${d.dmLeads}.`
     ),
     makeIndivCard(
-      'Setting Rate', 'Red < 2.3%  ·  Green 2.3%+  ·  Amazing 3%+',
+      'New Leads', 'First-time leads this period',
+      'neutral', d.newLeads, null, null,
+      `People opting in for the first time (tagged "New lead" in the sheet). Each person counts once. Just for info.`
+    ),
+    makeIndivCard(
+      'Setting Rate', 'Red < 2%  ·  Green 2%+  ·  Amazing 2.5%+',
       cat('settingRate', d.settingRate),
       sRateMode==='pct' ? sRatePctStr : sRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.settingRate='${sRateMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sRateMode==='pct'?`# ${sRateNum}`:`% ${sRatePctStr}`}</button>`,
       `openIndivPanel('setter-calls', event)`,
-      'Calls SET (col R) ÷ leads assigned (DM Index). Leading indicator.'
+      'Calls you set ÷ Leads Received, counting each person once. Based on Leads Received — not New Leads.'
     ),
     makeIndivCard(
       'Calls Cancelled',
@@ -1614,7 +1624,7 @@ function renderSetterComp() {
   function paceCat(actual,target){ const exp=(target/daysInMonth)*dayOfMonth; if(actual>=exp*1.10)return'gold'; if(actual>=exp*0.90)return'green'; return'red'; }
 
   const rows=[
-    {label:'Setting Rate', sub:'Red < 2.3%  ·  Green 2.3%+  ·  Amazing 3%+',
+    {label:'Setting Rate', sub:'Red < 2%  ·  Green 2%+  ·  Amazing 2.5%+',
       emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)}},
     {label:'Calls Set', sub:'Total in period',
       emery:{v:emeryData.callsSet, fmt:v=>v, c:'neutral'}},
@@ -1682,7 +1692,7 @@ const DEFS={
   newContracts:'<strong>New Contracts</strong> — Clients purchased in the period (anchored to Date Purchased in Mastersheet).',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
   grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health. Cancel Rate = cancelled \u00f7 total; Net Show = showed \u00f7 (completed \u2212 cancelled).',
-  settingRate:'<strong>Setting Rate</strong> — Calls SET ÷ unique leads assigned (DM Index, col H). Unique = one person counted once per week even if they requested multiple resources. Raw total shown in parentheses for reference.'
+  settingRate:'<strong>Setting Rate</strong> — Calls you set ÷ Leads Received, counting each person once (repeats shown in parentheses). Based on all Leads Received — not New Leads.'
 };
 
 function handleClick(e,key,type,panelId) {
@@ -1767,7 +1777,7 @@ function openChartPanel(key,rect) {
   const completed=WEEKS.filter(w=>!w.isCurrent).slice(-8);
   const labels=completed.map(wk=>{const n=Math.ceil((wk.ws-new Date(wk.ws.getFullYear(),0,1))/(7*24*3600*1000));return`W${String(n).padStart(2,'0')}`;});
   const vals=completed.map(wk=>{const w=calcWeek(wk.ws);return key==='settingRate'?parseFloat((w[key]*100).toFixed(1)):Math.round(w[key]*100);});
-  const thresh={closeRate:35,grossShowRate:65,settingRate:2.3}[key];
+  const thresh={closeRate:35,grossShowRate:65,settingRate:2.0}[key];
   const def=document.getElementById('def-chart'); if(def&&DEFS[key])def.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
   positionAndShow(panel,rect);
   if(trendChart){trendChart.destroy();trendChart=null;}
@@ -2133,7 +2143,8 @@ function renderSetterTrend(name, currentRange) {
   }
 
   const metrics = [
-    { name:'Leads Received', key:'dmLeads', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'Leads Received', key:'dmLeadsRaw', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'New Leads', key:'newLeads', fmt:v=>v, catFn:()=>'neutral' },
     { name:'Setting Rate', key:'settingRate', fmt:pct1, catFn:v=>cat('settingRate',v) },
     { name:'Calls Set', key:'callsSet', fmt:v=>v, catFn:()=>'neutral' },
     { name:'Net Show Rate', key:'netSR', fmt:pct, catFn:v=>v>=0.80?'green':'red' },
