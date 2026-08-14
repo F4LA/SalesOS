@@ -1506,9 +1506,9 @@ function renderSetterIndiv() {
 
   const cards = [
     makeIndivCard(
-      'Leads Received', 'All opt-ins you got this period',
-      'neutral', d.dmLeadsRaw, null, null,
-      `Every opt-in this setter got this period, repeats included. Different people: ${d.dmLeads}.`
+      'Leads Received', 'People who opted in this period',
+      'neutral', d.dmLeads, null, null,
+      `Different people this setter got this period. Each person counts once, even with repeats.`
     ),
     makeIndivCard(
       'New Leads', 'First-time leads this period',
@@ -1521,7 +1521,7 @@ function renderSetterIndiv() {
       sRateMode==='pct' ? sRatePctStr : sRateNum,
       `<button class="toggle-btn" onclick="event.stopPropagation();setterToggle.settingRate='${sRateMode==='pct'?'num':'pct'}';renderSetterIndiv()">${sRateMode==='pct'?`# ${sRateNum}`:`% ${sRatePctStr}`}</button>`,
       `openIndivPanel('setter-calls', event)`,
-      'Calls you set ÷ Leads Received, counting each person once. Based on Leads Received — not New Leads.'
+      'Calls you set ÷ Leads Received. Based on Leads Received — not New Leads.'
     ),
     makeIndivCard(
       'Calls Cancelled',
@@ -1692,7 +1692,7 @@ const DEFS={
   newContracts:'<strong>New Contracts</strong> — Clients purchased in the period (anchored to Date Purchased in Mastersheet).',
   closeRate:'<strong>Close Rate</strong> — New Contracts \u00f7 Qualified Shows.',
   grossShowRate:'<strong>Gross Show Rate</strong> — People who arrived \u00f7 all completed calls (includes cancellations in denominator). Signals overall pipeline health. Cancel Rate = cancelled \u00f7 total; Net Show = showed \u00f7 (completed \u2212 cancelled).',
-  settingRate:'<strong>Setting Rate</strong> — Calls you set ÷ Leads Received, counting each person once (repeats shown in parentheses). Based on all Leads Received — not New Leads.'
+  settingRate:'<strong>Setting Rate</strong> — Calls you set ÷ Leads Received (repeats shown in parentheses). Based on Leads Received — not New Leads.'
 };
 
 function handleClick(e,key,type,panelId) {
@@ -2143,7 +2143,7 @@ function renderSetterTrend(name, currentRange) {
   }
 
   const metrics = [
-    { name:'Leads Received', key:'dmLeadsRaw', fmt:v=>v, catFn:()=>'neutral' },
+    { name:'Leads Received', key:'dmLeads', fmt:v=>v, catFn:()=>'neutral' },
     { name:'New Leads', key:'newLeads', fmt:v=>v, catFn:()=>'neutral' },
     { name:'Setting Rate', key:'settingRate', fmt:pct1, catFn:v=>cat('settingRate',v) },
     { name:'Calls Set', key:'callsSet', fmt:v=>v, catFn:()=>'neutral' },
