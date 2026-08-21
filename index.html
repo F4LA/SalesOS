@@ -129,6 +129,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
 .lead-name { font-size: 13px; color: var(--text-body); font-weight: 500; }
 .lead-source { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .src-emery   { background: #E3F2FC; color: #1A5F8A; border: 1px solid #90C4E0; }       /* Blue */
+.src-joyce   { background: #FCE7F3; color: #BE185D; border: 1px solid #F9A8D4; }       /* Rose */
+.src-lakisha { background: #E0F2F1; color: #0F766E; border: 1px solid #99D8CF; }       /* Teal */
 .src-inbound { background: #FEF3E2; color: #B45309; border: 1px solid #F4C17A; }       /* Amber */
 .src-deniz   { background: #E8F8F0; color: #1A9E5C; border: 1px solid #A3DFC0; }       /* Green */
 .src-joey    { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }       /* Indigo */
@@ -555,6 +557,8 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
     <div id="setter-person-controls" style="display:flex;align-items:center;gap:8px;">
       <select class="person-select" id="setter-person" onchange="renderSetterIndiv()">
         <option value="Emery">Emery</option>
+        <option value="Joyce">Joyce</option>
+        <option value="Lakisha">Lakisha</option>
       </select>
     </div>
     <!-- Date controls: always visible -->
@@ -643,7 +647,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
       <div class="role-card">
         <div class="role-card-header"><span class="role-title">Setter</span><span class="role-hint" id="setter-comp-hint">weekly · MTD</span></div>
         <table class="role-table">
-          <thead><tr><th>Metric</th><th>Emery</th></tr></thead>
+          <thead id="setter-comp-head"><tr><th>Metric</th><th>Emery</th></tr></thead>
           <tbody id="setter-comp-body"></tbody>
         </table>
       </div>
@@ -661,6 +665,15 @@ const TAB_CLIENT = 'Client Mastersheet';
 
 const L = { firstName:0,lastName:1,email:2,salesCallBookedDate:10,callStatus:11,salesCallWith:12,endInSale:13,source:16,callScheduledDate:17,productPurchased:15 };
 const D = { firstName:0, lastName:1, igHandle:2, newLeadTS:4, setter:7, typeOfLead:8 };
+
+// ─── SETTER ROSTER ────────────────────────────────────────────────────────────
+// Single source of truth for who the active setters are. Add/remove names here
+// and every setter metric, view, breakdown and panel updates automatically.
+// Names must match exactly the Setter value in DM Tracking Index (col H) AND the
+// source value in Leads Applied (col Q) for that setter's booked calls.
+const SETTERS = ['Emery','Joyce','Lakisha'];
+// Monthly Qualified-Shows target per setter (defaults to 10 for anyone not listed).
+function setterTarget(name){ return name==='Emery' ? 30 : 10; }
 
 // Returns unique lead count from a pre-filtered array of DM rows.
 // Identity key: IG Handle (col C) if present, else FirstName+LastName.
@@ -796,17 +809,17 @@ function calcWeek(ws) {
   const netShowRate = netDenom>0 ? showed.length/netDenom : 0;
   const closeRate = qual.length>0 ? contracts.length/qual.length : 0;
 
-  // Setting rate — Emery only
-  const emerySet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&(r[L.source]||'').trim()==='Emery'; });
-  const dmEmery = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()==='Emery'; });
-  const totalSet = emerySet.length;
-  const totalDM = dmEmery.length;
-  const uniqueDMEmery = uniqueDMCount(dmEmery);
-  const uniqueTotalDM = uniqueDMEmery;
+  // Setting rate — all setters (department)
+  const setterSet = leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inWeek(d,ws)&&SETTERS.includes((r[L.source]||'').trim()); });
+  const dmSetters = dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inWeek(d,ws)&&(r[D.setter]||'').trim()!==''; });
+  const totalSet = setterSet.length;
+  const totalDM = dmSetters.length;
+  const uniqueTotalDM = uniqueDMCount(dmSetters);
   const settingRate = uniqueTotalDM>0 ? totalSet/uniqueTotalDM : 0;
+  const setBySetter = SETTERS.map(nm=>({ name:nm, n:setterSet.filter(r=>(r[L.source]||'').trim()===nm).length }));
 
   const monthStart = new Date(we.getFullYear(),we.getMonth(),1);
-  const emeryQualMTD = leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()==='Emery'&&QUAL.has((r[L.callStatus]||'').trim()); }).length;
+  const qualMTDBySetter = SETTERS.map(nm=>({ name:nm, n:leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); return d&&inRange(d,monthStart,we)&&(r[L.source]||'').trim()===nm&&QUAL.has((r[L.callStatus]||'').trim()); }).length }));
 
   function closerStats(name) {
     const cc=ocurred.filter(r=>(r[L.salesCallWith]||'').trim()===name);
@@ -852,11 +865,9 @@ function calcWeek(ws) {
 
   return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:newContractsNet,
     closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
-    setter:{
-      emery:{rate:uniqueDMEmery>0?emerySet.length/uniqueDMEmery:0, qualMTD:emeryQualMTD, callsSet:emerySet.length, dmLeads:uniqueDMEmery, dmLeadsRaw:dmEmery.length},
-    },
+    setter:{ bySetter:setBySetter, qualMTDBySetter },
     callsList,showsList,contractsList,closeList,grossList,
-    settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM}
+    settingData:{setBySetter,totalSet,totalDM,uniqueTotalDM}
   };
 }
 
@@ -877,14 +888,14 @@ function calcRange(start, end, name, type) {
     const netDenom=completed.length-cancelled.length;
     const grossShowRate=completed.length>0?showed.length/completed.length:0;
     const closeRate=qual.length>0?contracts.length/qual.length:0;
-    // Setting rate — all setters
-    const emerySet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&(r[L.source]||'').trim()==='Emery'; });
-    const dmEmery=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()==='Emery'; });
-    const totalSet=emerySet.length;
-    const totalDM=dmEmery.length;
-    const uniqueDMEmery=uniqueDMCount(dmEmery);
-    const uniqueTotalDM=uniqueDMEmery;
+    // Setting rate — all setters (department)
+    const setterSet=leadsRaw.filter(r=>{ const d=parseDate(r[L.callScheduledDate]); return d&&inRange(d,s,e)&&SETTERS.includes((r[L.source]||'').trim()); });
+    const dmSetters=dmsRaw.filter(r=>{ const d=parseDate(r[D.newLeadTS]); return d&&inRange(d,s,e)&&(r[D.setter]||'').trim()!==''; });
+    const totalSet=setterSet.length;
+    const totalDM=dmSetters.length;
+    const uniqueTotalDM=uniqueDMCount(dmSetters);
     const settingRate=uniqueTotalDM>0?totalSet/uniqueTotalDM:0;
+    const setBySetter=SETTERS.map(nm=>({ name:nm, n:setterSet.filter(r=>(r[L.source]||'').trim()===nm).length }));
     const callsList=happened.map(r=>({name:[(r[L.firstName]||'').trim(),(r[L.lastName]||'').trim()].filter(Boolean).join(' ')||'—',source:(r[L.source]||'').trim()}));
     const closeList=qual.map(r=>{
       const sale=(r[L.endInSale]||'').trim();
@@ -898,7 +909,7 @@ function calcRange(start, end, name, type) {
     const newContractsNet=contractsList.filter(c=>!c.refund).length;
     return { callsBooked:happened.length, qualShows:qual.length, newContracts:newContractsNet, grossShowRate, closeRate, settingRate,
       callsList, showsList, contractsList, closeList, grossList,
-      settingData:{emerySet:emerySet.length,dmEmery:dmEmery.length,totalSet,totalDM,uniqueDMEmery,uniqueTotalDM} };
+      settingData:{setBySetter,totalSet,totalDM,uniqueTotalDM} };
   } else if (type==='closer') {
     const cc=leadsRaw.filter(r=>{ const d=parseDate(r[L.salesCallBookedDate]); const st=(r[L.callStatus]||'').trim(); return d&&inRange(d,s,e)&&(r[L.salesCallWith]||'').trim()===name&&st!=='Confirmed'; });
     const comp=cc.filter(r=>COMPLETED.has((r[L.callStatus]||'').trim()));
@@ -1480,7 +1491,7 @@ function renderSetterIndiv() {
   const range=getDashRange('setter',setterDateMode);
   if(!range||!leadsRaw.length)return;
   const d=calcRange(range.start,range.end,name,'setter');
-  const target=name==='Emery'?30:10;
+  const target=setterTarget(name);
   document.getElementById('setter-indiv-title').textContent=`${name} — Setter`;
   document.getElementById('setter-indiv-period').textContent=range.label;
 
@@ -1615,25 +1626,28 @@ function renderSetterComp() {
   if (!range || !leadsRaw.length) return;
   document.getElementById('setter-comp-period').textContent = range.label;
 
-  const emeryData = calcRange(range.start, range.end, 'Emery', 'setter');
-
+  const data = SETTERS.map(name => calcRange(range.start, range.end, name, 'setter'));
 
   const endDate = range.end;
   const daysInMonth=new Date(endDate.getFullYear(),endDate.getMonth()+1,0).getDate();
   const dayOfMonth=Math.min(endDate.getDate(),daysInMonth);
   function paceCat(actual,target){ const exp=(target/daysInMonth)*dayOfMonth; if(actual>=exp*1.10)return'gold'; if(actual>=exp*0.90)return'green'; return'red'; }
 
+  // Header: one column per setter
+  document.getElementById('setter-comp-head').innerHTML =
+    '<tr><th>Metric</th>' + SETTERS.map(s=>`<th>${s}</th>`).join('') + '</tr>';
+
   const rows=[
     {label:'Setting Rate', sub:'Red < 2%  ·  Green 2%+  ·  Amazing 2.5%+',
-      emery:{v:emeryData.settingRate, fmt:pct1, c:cat('settingRate',emeryData.settingRate)}},
+      cells: data.map(d=>({v:d.settingRate, fmt:pct1, c:cat('settingRate',d.settingRate)}))},
     {label:'Calls Set', sub:'Total in period',
-      emery:{v:emeryData.callsSet, fmt:v=>v, c:'neutral'}},
-    {label:'Qual. Shows MTD', sub:'Target: 30 / month',
-      emery:{v:emeryData.qualMTD, fmt:v=>v+' / 30', c:paceCat(emeryData.qualMTD,30)}},
+      cells: data.map(d=>({v:d.callsSet, fmt:v=>v, c:'neutral'}))},
+    {label:'Qual. Shows MTD', sub:'Target per setter',
+      cells: data.map((d,i)=>{ const t=setterTarget(SETTERS[i]); return {v:d.qualMTD, fmt:v=>v+' / '+t, c:paceCat(d.qualMTD,t)}; })},
   ];
   document.getElementById('setter-comp-body').innerHTML=rows.map(r=>`<tr>
     <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
-    ${compCell(r.emery.v, r.emery.fmt, r.emery.c, null)}
+    ${r.cells.map(c=>compCell(c.v, c.fmt, c.c, null)).join('')}
   </tr>`).join('');
 }
 
@@ -1710,7 +1724,7 @@ function openVolumePanel(panelId,key,w,rect) {
   if(key==='settingRate'){
     const sd=w.settingData;
     document.getElementById('summary-setting').innerHTML=[
-      {n:sd.emerySet,l:'Emery Set'},
+      ...(sd.setBySetter||[]).map(x=>({n:x.n,l:`${x.name} Set`})),
       {n:`${sd.uniqueTotalDM} <span style="font-size:10px;color:var(--text-faint)">(${sd.totalDM} raw)</span>`,l:'Unique Leads'},{n:pct1(w.settingRate),l:'Dept Rate'}
     ].map(s=>`<div class="sum-stat"><span class="sum-num">${s.n}</span><span class="sum-lbl">${s.l}</span></div>`).join('');
     const d=document.getElementById('def-setting'); if(d)d.innerHTML=`<span class="def-title">Definition</span>${DEFS[key]}`;
@@ -1720,8 +1734,8 @@ function openVolumePanel(panelId,key,w,rect) {
   const listEl=document.getElementById('list-'+suffix);
   const sumEl=document.getElementById('summary-'+suffix);
   let leads,stats;
-  if(key==='callsBooked'){leads=w.callsList;const e=leads.filter(l=>l.source==='Emery').length,ch=leads.filter(l=>l.source==='21 Day Challenge').length,i=leads.length-e-ch;stats=[{n:e,l:'Emery'},{n:ch,l:'Challenge'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
-  else if(key==='qualShows'){leads=w.showsList;const e=leads.filter(l=>l.source==='Emery').length,i=leads.length-e;stats=[{n:e,l:'Emery'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
+  if(key==='callsBooked'){leads=w.callsList;const setterStats=SETTERS.map(nm=>({n:leads.filter(l=>l.source===nm).length,l:nm}));const ch=leads.filter(l=>l.source==='21 Day Challenge').length;const i=leads.filter(l=>!SETTERS.includes(l.source)&&l.source!=='21 Day Challenge').length;stats=[...setterStats,{n:ch,l:'Challenge'},{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
+  else if(key==='qualShows'){leads=w.showsList;const setterStats=SETTERS.map(nm=>({n:leads.filter(l=>l.source===nm).length,l:nm}));const i=leads.filter(l=>!SETTERS.includes(l.source)).length;stats=[...setterStats,{n:i,l:'Inbound'},{n:leads.length,l:'Total'}];}
   else if(key==='closeRate'){
     leads=w.closeList.map(l=>({name:l.name,source:l.closer,closed:l.closed}));
     const closed=leads.filter(l=>l.closed==='Yes').length;
@@ -1757,7 +1771,7 @@ function openVolumePanel(panelId,key,w,rect) {
       const stCls=showed?'src-emery':st==='No Show'?'src-challenge':'src-cancelled';
       return `<div class="lead-row"><span class="lead-name">${l.name}</span><span class="lead-source ${stCls}">${st}</span></div>`;
     } else if(key==='newContracts'){lbl=l.source==='Dr. Joey'?'Joey':l.source||'—';cls=l.source==='Dr. Joey'?'src-joey':'src-deniz';}
-    else{const iE=l.source==='Emery',iCh=(l.source||'').includes('Challenge');lbl=iE?'Emery':iCh?'Challenge':'Inbound';cls=iE?'src-emery':iCh?'src-challenge':'src-inbound';}
+    else{const src=(l.source||'').trim();const isSetter=SETTERS.includes(src),iCh=src.includes('Challenge');lbl=isSetter?src:iCh?'Challenge':'Inbound';cls=isSetter?('src-'+src.toLowerCase()):iCh?'src-challenge':'src-inbound';}
     const fuTag=key==='qualShows'&&l.status==='Follow Up'?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDF4E0;color:#A07820;border:1px solid #E8CC80;font-weight:600;margin-left:4px;">Follow Up</span>`:'';
     const prodTag=key==='newContracts'&&l.product?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#E3F2FC;color:var(--steel-700);border:1px solid #B8D9EF;font-weight:600;margin-left:4px;">${l.product}</span>`:'';
     const refTag=key==='newContracts'&&l.refund?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FDE8E8;color:#A02020;border:1px solid #F0B0B0;font-weight:600;margin-left:4px;">Refund</span>`:'';
