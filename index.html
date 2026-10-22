@@ -445,8 +445,10 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
     <!-- Person selector: only visible in Individual mode -->
     <div id="closer-person-controls" style="display:flex;align-items:center;gap:8px;">
       <select class="person-select" id="closer-person" onchange="renderCloserIndiv()">
-        <option value="Deniz">Deniz</option>
+        <option value="Alan">Alan</option>
+        <option value="Boaz">Boaz</option>
         <option value="Dr. Joey">Joey</option>
+        <option value="Bernardo">Bernardo</option>
       </select>
     </div>
     <!-- Date controls: always visible -->
@@ -538,7 +540,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; display: 
       <div class="role-card">
         <div class="role-card-header"><span class="role-title">Closer</span><span class="role-hint" id="closer-comp-hint">weekly</span></div>
         <table class="role-table">
-          <thead><tr><th>Metric</th><th>Deniz</th><th>Joey</th></tr></thead>
+          <thead id="closer-comp-head"></thead>
           <tbody id="closer-comp-body"></tbody>
         </table>
       </div>
@@ -672,6 +674,16 @@ const D = { firstName:0, lastName:1, igHandle:2, newLeadTS:4, setter:7, typeOfLe
 // Names must match exactly the Setter value in DM Tracking Index (col H) AND the
 // source value in Leads Applied (col Q) for that setter's booked calls.
 const SETTERS = ['Emery','Joyce','Lakisha'];
+// Active closers shown in live views. key = name as written in Leads Applied "Sales call with" (col M)
+// and what calcRange matches on. kpi:false = context only (no red/green thresholds).
+// Deniz is intentionally omitted here (retired) but kept in normalizeCloser() + historical data
+// so past periods still count his deals.
+const CLOSERS = [
+  { key:'Alan',     label:'Alan',     kpi:true  },
+  { key:'Boaz',     label:'Boaz',     kpi:true  },
+  { key:'Dr. Joey', label:'Joey',     kpi:false },
+  { key:'Bernardo', label:'Bernardo', kpi:false },
+];
 // Monthly Qualified-Shows target per setter (defaults to 10 for anyone not listed).
 function setterTarget(name){ return name==='Emery' ? 30 : 10; }
 
@@ -864,7 +876,7 @@ function calcWeek(ws) {
   const newContractsNet=contractsList.filter(c=>!c.refund).length;
 
   return { ws,we,grossShowRate,netShowRate,closeRate,settingRate,callsBooked:happened.length,qualShows:qual.length,newContracts:newContractsNet,
-    closer:{deniz:closerStats('Deniz'),joey:closerStats('Dr. Joey')},
+    closer:Object.fromEntries(CLOSERS.map(c=>[c.key,closerStats(c.key)])),
     setter:{ bySetter:setBySetter, qualMTDBySetter },
     callsList,showsList,contractsList,closeList,grossList,
     settingData:{setBySetter,totalSet,totalDM,uniqueTotalDM}
@@ -1593,31 +1605,23 @@ function renderCloserComp() {
   if (!range || !leadsRaw.length) return;
   document.getElementById('closer-comp-period').textContent = range.label;
 
-  // Calculate stats for both closers over the selected range
-  const denizData = calcRange(range.start, range.end, 'Deniz', 'closer');
-  const joeyData  = calcRange(range.start, range.end, 'Dr. Joey', 'closer');
+  // Header + columns generated from CLOSERS (single source of truth)
+  document.getElementById('closer-comp-head').innerHTML =
+    `<tr><th>Metric</th>${CLOSERS.map(c=>`<th>${c.label}</th>`).join('')}</tr>`;
 
-  const rows=[
-    {label:'Calls Booked', sub:'Total calls in period',
-      deniz:{v:denizData.calls,   fmt:v=>v, c:'neutral'},
-      joey: {v:joeyData.calls,    fmt:v=>v}},
-    {label:'Calls Cancelled', sub:'Number cancelled',
-      deniz:{v:denizData.cancelled,  fmt:v=>v, c:'neutral'},
-      joey: {v:joeyData.cancelled,   fmt:v=>v}},
-    {label:'Net Show Rate', sub:'Red < 80%  ·  Green 80%+',
-      deniz:{v:denizData.netSR,   fmt:pct, c:denizData.netSR>=0.80?'green':'red'},
-      joey: {v:joeyData.netSR,    fmt:pct}},
-    {label:'Close Rate', sub:'Red < 35%  ·  Green 35–44%  ·  Amazing 45%+',
-      deniz:{v:denizData.closeRate, fmt:pct, c:denizData.closeRate>=0.45?'gold':denizData.closeRate>=0.35?'green':'red'},
-      joey: {v:joeyData.closeRate,  fmt:pct}},
-    {label:'Avg Cash Collected', sub:'Per contract closed',
-      deniz:{v:denizData.avgCash,  fmt:dollar, c:denizData.avgCash>0?'green':'neutral'},
-      joey: {v:joeyData.avgCash,   fmt:dollar}},
+  const data = CLOSERS.map(c => ({ ...c, d: calcRange(range.start, range.end, c.key, 'closer') }));
+
+  const metrics = [
+    {label:'Calls Booked',       sub:'Total calls in period',                       get:d=>d.calls,     fmt:v=>v,   color:()=>'neutral'},
+    {label:'Calls Cancelled',    sub:'Number cancelled',                            get:d=>d.cancelled, fmt:v=>v,   color:()=>'neutral'},
+    {label:'Net Show Rate',      sub:'Red < 80%  \u00b7  Green 80%+',                   get:d=>d.netSR,     fmt:pct,    color:d=>d.netSR>=0.80?'green':'red'},
+    {label:'Close Rate',         sub:'Red < 35%  \u00b7  Green 35\u201344%  \u00b7  Amazing 45%+', get:d=>d.closeRate, fmt:pct,    color:d=>d.closeRate>=0.45?'gold':d.closeRate>=0.35?'green':'red'},
+    {label:'Avg Cash Collected', sub:'Per contract closed',                         get:d=>d.avgCash,   fmt:dollar, color:()=>'neutral'},
   ];
-  document.getElementById('closer-comp-body').innerHTML=rows.map(r=>`<tr>
-    <td><span class="metric-cell-label">${r.label}</span><span class="metric-cell-threshold">${r.sub}</span></td>
-    ${compCell(r.deniz.v, r.deniz.fmt, r.deniz.c, null)}
-    ${compCell(r.joey.v, r.joey.fmt, 'neutral', 'context')}
+
+  document.getElementById('closer-comp-body').innerHTML = metrics.map(m=>`<tr>
+    <td><span class="metric-cell-label">${m.label}</span><span class="metric-cell-threshold">${m.sub}</span></td>
+    ${data.map(c => c.kpi ? compCell(m.get(c.d), m.fmt, m.color(c.d), null) : compCell(m.get(c.d), m.fmt, 'neutral', 'context')).join('')}
   </tr>`).join('');
 }
 
@@ -1751,7 +1755,7 @@ function openVolumePanel(panelId,key,w,rect) {
     const cancRate=leads.length>0?canc/leads.length:0;
     const netShow=(sh+noshow)>0?sh/(sh+noshow):0;
     stats=[{n:sh,l:'Showed'},{n:noshow,l:'No Show'},{n:canc,l:'Cancelled'},{n:pct(cancRate),l:'Cancel Rate'},{n:pct(netShow),l:'Net Show'},{n:leads.length,l:'Total'}];
-  } else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product,refund:l.refund}));const net=w.contractsList.filter(l=>!l.refund);const d=net.filter(l=>l.closer==='Deniz').length,j=net.filter(l=>l.closer==='Dr. Joey').length,ref=w.contractsList.filter(l=>l.refund).length;stats=[{n:d,l:'Deniz'},{n:j,l:'Joey'},{n:ref,l:'Refunds'},{n:net.length,l:'Total'}];}
+  } else{leads=w.contractsList.map(l=>({name:l.name,source:l.closer,product:l.product,refund:l.refund}));const net=w.contractsList.filter(l=>!l.refund);const ref=w.contractsList.filter(l=>l.refund).length;stats=[...CLOSERS.map(c=>({n:net.filter(l=>l.closer===c.key).length,l:c.label})),{n:ref,l:'Refunds'},{n:net.length,l:'Total'}];}
   listEl.innerHTML=leads.map(l=>{
     let lbl,cls;
     if(key==='closeRate'){
